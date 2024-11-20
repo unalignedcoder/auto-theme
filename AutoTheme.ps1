@@ -219,7 +219,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 		$inSlideshowSection = $false
 		
 		foreach ($line in $themeContent) {
-			Write-Log "Processing line: $line" -verboseMessage $true
+			# Write-Log "Processing line: $line" -verboseMessage $true
 			
 			# Check for the start of the [Slideshow] section
 			if ($line -match '^\[Slideshow\]') {
