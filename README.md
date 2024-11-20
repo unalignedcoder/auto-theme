@@ -14,7 +14,11 @@ In fact, using `.theme` files allows to set different wallpaper slideshows for e
 All it takes are `.theme` files that the user has created, or that can be found ready-made in the system.
 
 ## Installation
-1) Create custom **Light** and **Dark** themes to your preference. To do so, simply modify settings in the _Personalize_ window (including for example a wallpaper slideshow) and then save it as custom theme. You can then also modify the `.theme` file in your text editor as needed. Alternatively, use any `.theme` file found by defualt in the system, or downloaded online.
+1) Create custom **Light** and **Dark** themes to your preference. To do so, simply modify settings in the _Personalize_ window (including for example a wallpaper slideshow) and then save it as custom theme.
+
+	![image](https://github.com/user-attachments/assets/4aeb4d7d-35c4-4712-8fc4-2d183a5fb3f1)
+
+You can then also modify the `.theme` file in your text editor as needed. Alternatively, use any `.theme` file found by defualt in the system, or downloaded online.
 
 2) Open the file `Config.ps1` and modify the following variables to your preference:
 
