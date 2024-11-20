@@ -210,7 +210,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 			[string]$themeFilePath
 		)
 		
-		Write-Log "Checking if the theme shuffles wallpapers"  -verboseMessage $true
+		Write-Log "Checking if the theme shuffles wallpapers" -verboseMessage $true
 		
 		# Read the content of the theme file
 		$themeContent = Get-Content -Path $themeFilePath
@@ -219,28 +219,32 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 		$inSlideshowSection = $false
 		
 		foreach ($line in $themeContent) {
+			Write-Log "Processing line: $line" -verboseMessage $true
+			
 			# Check for the start of the [Slideshow] section
 			if ($line -match '^\[Slideshow\]') {
+				Write-Log "Found [Slideshow] section" -verboseMessage $true
 				$inSlideshowSection = $true
+				continue
 			}
 			
 			# If we are inside the [Slideshow] section, look for 'shuffle' setting
 			if ($inSlideshowSection) {
-				if ($line -match 'shuffle=(\d)') {
-					# If shuffle is found, return true or false based on its value
-					Write-Log "Yes, the theme shuffles wallpapers"  -verboseMessage $true
-					return $matches[1] -eq '1'					
+				if ($line -match '(?i)shuffle=(\d)') { # Case-insensitive match for 'shuffle'
+					Write-Log "Found shuffle setting: $line" -verboseMessage $true
+					return $matches[1] -eq '1'
 				}
 				
 				# If we encounter the next section or end of file, break out of the loop
 				if ($line -match '^\[.*\]') {
+					Write-Log "Leaving [Slideshow] section" -verboseMessage $true
 					break
 				}
 			}
 		}
 		
 		# If no shuffle setting is found, return false
-		Write-Log "No, the theme does not shuffle wallpapers"  -verboseMessage $true
+		Write-Log "No, the theme does not shuffle wallpapers" -verboseMessage $true
 		return $false
 	}
 
@@ -306,7 +310,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 			[string]$wallpaperDirectory
 		)
 		
-		if (-Not RandomFirst) {
+		if (-Not ($RandomFirst)) {
 			
 			Write-Log "The first wallpaper will not be randomized."  -verboseMessage $true			
 			return
