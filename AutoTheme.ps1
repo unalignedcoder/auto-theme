@@ -12,6 +12,9 @@ The script is meant to be ran from Task Scheduler, and it will automatically cre
 If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the themes.
 #>
 
+# Script version
+$scriptVersion = "1.0.1"
+
 # ============= Config file ==============
 	
 	$ConfigPath = "$PSScriptRoot\config.ps1"
@@ -303,8 +306,8 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 		}
 	}
 
-	<# Randomly prepend the substring '000_'
-	to one wallpaper filename, so as to make it first pick. #>
+	<# Prepend the substring '000_' to one randomly chosen
+	wallpaper filename, so as to make it first pick. #>
 	function Randomly-rename {
 		param (
 			[string]$wallpaperDirectory
@@ -496,8 +499,9 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 		. $ConfigPath
 		
 		# Start logging
-		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"	
-		Write-Log "$timestamp === Script started"
+		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+		Write-Log "$timestamp === Script started (Version: $scriptVersion)"
+
 		
 		# Check if the script was run recently
 		if($checkLastRun){Check-LastRun}
