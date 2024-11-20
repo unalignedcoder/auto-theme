@@ -12,57 +12,9 @@ The script is meant to be ran from Task Scheduler, and it will automatically cre
 If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the themes.
 #>
 
-
-# ========= User variables == CUSTOMIZE THIS FIRST! ===========
-
-	# Name of theme files
-	$themeLight = "myLight.theme"
-	$themeDark = "myDark.theme"
-
-	<# Complete path to the .theme files. You can use a system path to default Windows themes,
-	a custom path of your choice, or even no path if the files are in the same folder as the script.
-	However, consider that Windows will always copy your custom .theme files to LocalAppData. #>
-	$LightPath = Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeLight
-	$DarkPath =  Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeDark
+# ============= Config file ==============
 	
-	<# Randomize first wallpaper: even if you set 'shuffle=1' in your .theme file
-	Windows will always use the first wallpaper in alphabetic order as the first. #>
-	$RandomFirst = $true
-
-	# Use fixed hours to switch Themes (keeps the script offline)
-	$UseFixedHours = $false
-	$LightThemeTime = "07:00 AM"
-	$DarkThemeTime = "07:00 PM"
-
-	<# Set to $true to always use a user-defined location.
-	Alernatively, the script will attempt to retrieve location from the system
-	or, failing that, from your ISP	
-	(only needed if $UseFixedHours = $false) #>
-	$UseUserLoc = $true
-
-	<# User-defined coordinates  
-	(only needed if $UseFixedHours = $false) #>
-	$UserLat = "40.7128" 
-	$UserLng = "-74.0060"
-
-	<# User-defined timezone
-	(only needed if $UseFixedHours = $false) #>
-	$UserTzid = "America/New_York"  
-
-	<# Paths to the folders for light and dark wallpapers.
-	(only needed if $randomFirst = true) #>
-	$wallLightPath = "Path\to\Light\wallpapers"
-	$wallDarkPath = "Path\to\Dark\wallpapers"
-
-# ============= Developer variables ==============
-
-	$log = $true
-	$verbose = $true
-	$interval = "10" 
-	$checkLastRun = $false
-	
-	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
-	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
+	$ConfigPath = "$PSScriptRoot\config.ps1"
 
 # ============= FUNCTIONS  ==============
 
@@ -316,8 +268,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 		} else {
 			
 			Write-Log "Theme file not found: $ThemePath"
-		}
-		
+		}	
 	}
 
 	# Toggle the theme
@@ -532,10 +483,19 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 # ============= RUNTIME  ==============
 
 	try {
+
+		# include config variables
+		if (-Not (Test-Path $ConfigPath)) {
+			Write-Error "Configuration file not found: $ConfigPath"
+			Exit 1
+		}
+		. $ConfigPath
 		
+		# Start logging
 		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"	
 		Write-Log "$timestamp === Script started"
 		
+		# Check if the script was run recently
 		if($checkLastRun){Check-LastRun}
 
 		# Running from terminal or from Scheduled Task?
@@ -543,7 +503,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 			
 			Write-Log "Script is running from Terminal." -verboseMessage $true
 			
-			# Toggle the theme
+			# Toggle the theme and exit
 			Write-Log "Toggling the Theme"
 			ToggleTheme
 			exit
@@ -551,8 +511,9 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 		} else {
 			
 			Write-Log "Script is running from Task Scheduler." -verboseMessage $true
-			
 			Write-Log "Selecting Theme based on daylight"
+
+			# Main function
 			Main
 		
 		}
