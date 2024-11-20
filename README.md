@@ -30,3 +30,7 @@ All it takes are `.theme` files that the user has created, or that can be found 
 	- Program/script: `Powershell.exe`
 	- Add arguments: `-NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\AutoTheme.ps1"`
 	- Run with highest privileges
+
+## Usage
+This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user. When run from terminal, however, using `.\AutoTheme.ps1`, the script will simply 'toggle' the theme (switching from one to the other) and then exit. This can be useful for testing purposes, but also for the odd times when we need to manually switch the theme regardless of our hours settings.
+
