@@ -45,9 +45,9 @@
 # ============= Developer variables ==============
 
 	$log = $true
-	$verbose = $true
+	$verbose = $false
 	$interval = "10" 
-	$checkLastRun = $false
+	$checkLastRun = $true
 	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
