@@ -2,8 +2,8 @@
 # ========= User variables == CUSTOMIZE THIS! ===========
 
 	# Name of theme files
-	$themeLight = "myLight.theme"
-	$themeDark = "myDark.theme"
+	$themeLight = "Name-of-Light.theme"
+	$themeDark = "Name-of-Dark.theme"
 
 	<# Complete path to the .theme files. You can use a system path to default Windows themes,
 	a custom path of your choice, or even no path if the files are in the same folder as the script.
@@ -21,7 +21,7 @@
 	Alernatively, the script will attempt to retrieve location from the system
 	or, failing that, from your ISP	
 	(only needed if $UseFixedHours = $false) #>
-	$UseUserLoc = $true
+	$UseUserLoc = $false
 
 	<# User-defined coordinates  
 	(only needed if $UseFixedHours = $false) #>
@@ -44,7 +44,7 @@
 	
 # ============= Developer variables ==============
 
-	$log = $true
+	$log = false
 	$verbose = $false
 	$interval = "10" 
 	$checkLastRun = $true

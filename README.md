@@ -2,25 +2,25 @@
 Powershell script which automatically switches `.theme` files depending on the time of day.
 
 ## Description
-This script automatically alternates between two  `.theme` files of your choice, either via scheduled task or when run directly. It finds sunrise or sunset times retriving location, or it stays offline using the hours indicated by the user.
+This script automatically alternates between two  `.theme` files chosen by the user, either via scheduled task or when run directly. As a scheduled task, it finds sunrise or sunset times by retriving location, or it stays offline using the hours indicated by the user.
 
 ## The forgotten ADVANTAGE of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings. They then try to force a system refresh to show changes and in doing so incurr in many difficulties and potential compatibility problems for the user.
 
 This script however directly starts `.theme` files as processes, therefore letting the system itself seamlessly operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
 
-In fact, using `.theme` files allows to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into odd behavior.
+In fact, using `.theme` files allows to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
 
 All it takes are `.theme` files that the user has created, or that can be found ready-made in the system.
 
 ## Installation
-1) Create custom **Light** and **Dark** themes to your preference. To do so, simply modify settings in the _Personalize_ window (including for example a wallpaper slideshow) and then save it as custom theme.
+1) Create custom **Light** and **Dark** themes as preferred. To do so, simply modify settings in the _Personalize_ window (including for example a wallpaper slideshow) and then save it as custom theme.
 
 	![image](https://github.com/user-attachments/assets/4aeb4d7d-35c4-4712-8fc4-2d183a5fb3f1)
 
-Alternatively, use any `.theme` file found by defualt in the system, or downloaded online. Notice that you can also modify the `.theme` files directly in your text editor. 
+Alternatively, use any `.theme` file found by defualt in the system, or downloaded online. Notice that `.theme` files can always be directly modified in a simple text editor. 
 
-2) Open the file `Config.ps1` and modify the following variables to your preference:
+2) Open the file `Config.ps1` and modify the following variables as preferred:
 
 	![image](https://github.com/user-attachments/assets/2d0b57f1-3f0a-4829-812e-d9cb6fa27031)
 
@@ -44,14 +44,14 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 
 ![image](https://github.com/user-attachments/assets/f2dcbd94-beee-477d-8f5c-5868c3780dc0)
 
-5) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will then schedule the next temporary task to run at the next required theme change time, whether set by the user or identified through user location.
+5) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location.
 
 ## Usage
 This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user. 
 
-When run from terminal, however, using `.\AutoTheme.ps1`, the script will simply 'toggle' the theme (switching from one to the other) and then exit. This can be useful for testing purposes, but also for the odd times when we need to manually switch the theme regardless of our hours settings. 
+When run from terminal, however, using `.\AutoTheme.ps1`, the script will simply 'toggle' the theme (switching from one `.theme` file to the other) and then exit. This can be useful for testing purposes, but also for the odd times when we need to manually switch the theme regardless of task settings. 
 
-You can create a shortcut to the script and place it on your desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
+For conveniencem you can create a shortcut to the script and place it on your desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
 
 ![image](https://github.com/user-attachments/assets/954d4a76-3001-4bd8-9e7d-460c1db3888a)
 
