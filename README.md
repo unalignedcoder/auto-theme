@@ -17,6 +17,9 @@ All it takes are `.theme` files that the user has created, or that can be found 
 1) Create custom **Light** and **Dark** themes to your preference. To do so, simply modify settings in the _Personalize_ window (including for example a wallpaper slideshow) and then save it as custom theme. You can then also modify the `.theme` file in your text editor as needed. Alternatively, use any `.theme` file found by defualt in the system, or downloaded online.
 
 2) Open the file `Config.ps1` and modify the following variables to your preference:
+
+   ![image](https://github.com/user-attachments/assets/12d6e5d4-f90a-46c6-b88c-5cad6190f38d)
+
 - `themeLight` and `themeDark` should be the names of your custom `.theme` files.
 - `LightPath` and `$DarPath`should be the paths to your custom `.theme` files. Usually Windows saves them in `C:\Users\%username%\AppData\Local\Microsoft\Windows\Themes\`.
 - `$UseFixedHours` should be set to `$true` if you want to use fixed hours for the theme change. If set to `$false`, the script will try to find the sunrise and sunset times for your location. When set to `$true`, the script will keep offline.
