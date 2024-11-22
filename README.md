@@ -4,7 +4,7 @@ Powershell script which automatically switches `.theme` files depending on the t
 ## Description
 This script automatically alternates between two  `.theme` files chosen by the user, either via scheduled task or when run directly. As a scheduled task, it finds sunrise or sunset times by retriving location, or it stays offline using the hours indicated by the user.
 
-## The forgotten benefit of using `.theme` files
+## The forgotten benefits of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings. They then try to force a system refresh to show changes and in doing so incurr in many difficulties and potential compatibility problems for the user.
 
 This script however directly starts `.theme` files as processes, therefore letting the system itself seamlessly operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
