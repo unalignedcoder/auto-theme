@@ -57,7 +57,7 @@ if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
 
 # Create the scheduled task if it doesn't exist
 $Trigger = New-ScheduledTaskTrigger -AtLogOn
-$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
+$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
 Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User "$env:USERNAME" -Action $Action -RunLevel Highest -Force ! Out-Null
 
 Write-Host "Scheduled task '$TaskName' created successfully!" -ForegroundColor Cyan
