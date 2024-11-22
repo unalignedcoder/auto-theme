@@ -1,11 +1,11 @@
 <#
-.SYNOPSIS 
+.SYNOPSIS
 Changes the active Windows theme based on a predefined schedule.
 
 .DESCRIPTION
 This Powershell script automatically switches the Windows theme based on Sunrise and Sunset, or hours set by the user.
 Rather than using registry/system settings, it selects a given .theme file. This allows for a much higher degree of customization.
-The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention. 
+The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
 Alternatively, it can use hours provided by the user, thus staying offline.
 The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
@@ -13,17 +13,17 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.6"
+$scriptVersion = "1.0.7"
 
 # ============= Config file ==============
-	
+
 	$ConfigPath = "$PSScriptRoot\config.ps1"
 
 # ============= FUNCTIONS  ==============
 
 	# Determine if the script runs interactively
 	function IsRunningFromTerminal {
-		
+
 		# Get the current process ID
 		$proc = Get-CimInstance Win32_Process -Filter "ProcessId = $pid"
 
@@ -47,25 +47,25 @@ $scriptVersion = "1.0.6"
 
 		# Only proceed if in debug mode
 		if ($log) {
-			
+
 			<# Check for verbosity:
-			If the message is verbose, but verbose is false, end the Function 
+			If the message is verbose, but verbose is false, end the Function
 			If the message is verbose, but verbose is true, continue
-			If the message is not verbose, continue #>		
+			If the message is not verbose, continue #>
 			if ($verboseMessage -and -not $verbose) {
-				
+
 				return  # Skip logging if message is verbose and $verbose is set to false
 			}
 
 			# Display log output depending on session type
 			if (IsRunningFromTerminal) {
-				
+
 				Write-Output "$message" # Output to console
-				
+
 			} else {
-				
+
 				Add-Content -Path $logFile -Value "$message"  # Log to file
-				
+
 			}
 		}
 	}
@@ -76,48 +76,48 @@ $scriptVersion = "1.0.6"
 			[string]$Text,
 			[string]$AppLogo
 		)
-		
+
 		# Install the BurntToast module if not already installed
-		if (-not (Get-Module -Name BurntToast -ListAvailable)) {            
+		if (-not (Get-Module -Name BurntToast -ListAvailable)) {
 			Install-Module -Name BurntToast -Scope CurrentUser
 		}
-		
+
 		# for when the above is commented out or fails, we double-check.
 		if (Get-Module -Name BurntToast -ListAvailable) {
-			
+
 			try {
-				
+
 				$logoFullPath = Join-Path -Path $PSScriptRoot -ChildPath $AppLogo
 				New-BurntToastNotification -Text $Text -AppLogo $logoFullPath
-				
+
 				LogThis "Displayed BurntToast notification with text: $Text and logo: $logoFullPath"  -verboseMessage $true
-				
+
 			} catch {
-				
+
 				LogThis "Error displaying BurntToast notification: $_"  -verboseMessage $true
 			}
-			
+
 		} else {
-			
+
 			LogThis "BurntToast module is not installed. Cannot display system notifications."  -verboseMessage $true
 		}
 	}
 
 	# Check if the script has been run in the last hour
 	function LastTime {
-		
+
 		LogThis "Checking if script was run in the last $interval minutes"  -verboseMessage $true
 
 		if (Test-Path $lastRunFile) {
-			
+
 			$lastRun = Get-Content $lastRunFile | Out-String
 			$lastRun = [DateTime]::Parse($lastRun)
 			$now = Get-Date
-			
+
 			$timeSinceLastRun = $now - $lastRun
-			
+
 			if ($timeSinceLastRun.TotalMinutes -lt $interval) {
-				
+
 				LogThis "Script was run within the last $interval minutes. Exiting."
 				exit
 			}
@@ -138,14 +138,14 @@ $scriptVersion = "1.0.6"
 			[double]$FallbackLongitude = $UserLng,
 			[string]$FallbackTimezone = $UserTzid
 		)
-		
+
 		LogThis "Getting location coordinates." -verboseMessage $true
 
 		# If $UseUserLoc is set to true, return user-defined coordinates and timezone
 		if ($UseUserLoc) {
-			
+
 			LogThis "Using user-defined coordinates and timezone." -verboseMessage $true
-			
+
 			return @{
 				Latitude = $FallbackLatitude
 				Longitude = $FallbackLongitude
@@ -155,16 +155,16 @@ $scriptVersion = "1.0.6"
 
 		# Attempt to get location and timezone from Device Geolocation
 		try {
-			
+
 			Add-Type -AssemblyName 'Windows.Devices.Geolocation'
 			$geolocator = New-Object Windows.Devices.Geolocation.Geolocator
 			$position = $geolocator.GetGeopositionAsync().GetAwaiter().GetResult()
 			$UserLat = $position.Coordinate.Point.Position.Latitude
 			$longitude = $position.Coordinate.Point.Position.Longitude
 			$UserTzid = [System.TimeZone]::CurrentTimeZone.StandardName
-			
+
 			LogThis "Retrieved device location and system timezone." -verboseMessage $true
-			
+
 			return @{
 				Latitude = [double]$UserLat
 				Longitude = [double]$longitude
@@ -172,18 +172,18 @@ $scriptVersion = "1.0.6"
 			}
 		}
 		catch {
-			
+
 			LogThis "Device location and timezone retrieval failed. Trying online service." -verboseMessage $true
 		}
 
 		# Attempt to get location and timezone from online service
 		try {
-			
+
 			$response = Invoke-RestMethod -Uri "http://ip-api.com/json"
 			if ($response.status -eq "success") {
-				
+
 				LogThis "Retrieved location and timezone from online service."
-				
+
 				return @{
 					Latitude = [double]$response.lat
 					Longitude = [double]$response.lon
@@ -192,14 +192,14 @@ $scriptVersion = "1.0.6"
 			}
 		}
 		catch {
-			
+
 			LogThis "Online service location and timezone retrieval failed. Using fallback." -verboseMessage $true
 		}
 
 		# Fallback to user-defined coordinates and timezone if all else fails
-		
+
 		LogThis "Using user-defined coordinates and timezone." -verboseMessage $true
-		
+
 		return @{
 			Latitude = $FallbackLatitude
 			Longitude = $FallbackLongitude
@@ -212,32 +212,32 @@ $scriptVersion = "1.0.6"
 		param (
 			[string]$themeFilePath
 		)
-		
+
 		LogThis "Checking if the theme shuffles wallpapers" -verboseMessage $true
-		
+
 		# Read the content of the theme file
 		$themeContent = Get-Content -Path $themeFilePath
-		
+
 		# Flag to indicate if we are inside the [Slideshow] section
 		$inSlideshowSection = $false
-		
+
 		foreach ($line in $themeContent) {
 			# LogThis "Processing line: $line" -verboseMessage $true
-			
+
 			# Check for the start of the [Slideshow] section
 			if ($line -match '^\[Slideshow\]') {
 				LogThis "Found [Slideshow] section" -verboseMessage $true
 				$inSlideshowSection = $true
 				continue
 			}
-			
+
 			# If we are inside the [Slideshow] section, look for 'shuffle' setting
 			if ($inSlideshowSection) {
 				if ($line -match '(?i)shuffle=(\d)') { # Case-insensitive match for 'shuffle'
 					LogThis "Found shuffle setting: $line" -verboseMessage $true
 					return $matches[1] -eq '1'
 				}
-				
+
 				# If we encounter the next section or end of file, break out of the loop
 				if ($line -match '^\[.*\]') {
 					LogThis "Leaving [Slideshow] section" -verboseMessage $true
@@ -245,7 +245,7 @@ $scriptVersion = "1.0.6"
 				}
 			}
 		}
-		
+
 		# If no shuffle setting is found, return false
 		LogThis "No, the theme does not shuffle wallpapers" -verboseMessage $true
 		return $false
@@ -259,7 +259,7 @@ $scriptVersion = "1.0.6"
 
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
-			
+
 			# Apply the theme
 			Start-Process $ThemePath
 
@@ -271,35 +271,35 @@ $scriptVersion = "1.0.6"
 			if ($settingsProcess) {
 				Stop-Process -Id $settingsProcess.Id
 			}
-			
+
 		} else {
-			
+
 			LogThis "Theme file not found: $ThemePath"
-		}	
+		}
 	}
 
 	# Toggle the theme
 	function ToggleTheme {
-		
+
 		# Get current theme
 		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
 
 		if ($CurrentTheme -match "dark")  {
-			
+
 			If (DoWeShuffle($LightPath)) {
-				RandomWall -wallpaperDirectory $wallLightPath	
-			}		
-			
+				RandomWall -wallpaperDirectory $wallLightPath
+			}
+
 			LogThis "Selected $LightPath"  -verboseMessage $true
 			StartTheme $LightPath
 			LogThis "$themeLight activated"
-			
+
 		}else {
-			
+
 			If (DoWeShuffle($DarkPath)) {
 				RandomWall -wallpaperDirectory $wallDarkPath
 			}
-			
+
 			LogThis "Selected $DarkPath"  -verboseMessage $true
 			StartTheme $DarkPath
 			LogThis "$themeDark activated"
@@ -312,19 +312,19 @@ $scriptVersion = "1.0.6"
 		param (
 			[string]$wallpaperDirectory
 		)
-		
+
 		if (-Not ($RandomFirst)) {
 			
 			LogThis "The first wallpaper will not be randomized."  -verboseMessage $true			
 			return
 		}
-		
+
 		LogThis "Randomizing first wallpaper."  -verboseMessage $true
 
 		# Retrieve file objects directly into $wallpapers
 		LogThis "Looking in $wallpaperDirectory"  -verboseMessage $true
 		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
-		
+
 		# Check if there's already a file with "000_" prefix and rename it back
 		$existingRenamedWallpaper = $wallpapers | Where-Object { $_.Name.StartsWith("000_") }
 		if ($existingRenamedWallpaper) {
@@ -333,10 +333,10 @@ $scriptVersion = "1.0.6"
 			Rename-Item -Path $existingRenamedWallpaper.FullName -NewName $originalNameFull
 			LogThis "Removed '000_' prefix from $($existingRenamedWallpaper.FullName)"  -verboseMessage $true
 		}
-			
+
 		# Filter out wallpapers that still have "000_" in the name (unlikely after removal)
 		$newWallpapers = $wallpapers | Where-Object { -not $_.Name.StartsWith("000_") }
-		
+
 		# Ensure there are wallpapers available to rename
 		if ($newWallpapers.Count -eq 0) {
 			LogThis "No wallpapers available for renaming."  -verboseMessage $true
@@ -345,7 +345,7 @@ $scriptVersion = "1.0.6"
 
 		# Select a random wallpaper from the filtered list
 		$randomWallpaper = $newWallpapers | Get-Random
-		
+
 		# Construct the new name and rename
 		$newWallpaperName = "000_" + $randomWallpaper.Name
 		$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
@@ -368,22 +368,22 @@ $scriptVersion = "1.0.6"
 	function Main {
 
 		if ($UseFixedHours) {
-			
+
 			# stay offline
 			$Sunrise = $LightThemeTime
 			$Sunset = $DarkThemeTime
-			$TomorrowSunrise = $LightThemeTime 
-			
+			$TomorrowSunrise = $LightThemeTime
+
 		} else {
-			
+
 			# go online
 			$location = LocateThis
-			
+
 			# Extract latitude, longitude and Timezone for API call
 			$lat = $location.Latitude
 			$lng = $location.Longitude
 			$tzid = $location.Timezone
-			
+
 			$url = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng&tzid=$tzid"
 			$Daylight = (Invoke-RestMethod $url).results
 			LogThis "Fetched daylight data." -verboseMessage $true
@@ -395,43 +395,43 @@ $scriptVersion = "1.0.6"
 			$TomorrowDaylight = (Invoke-RestMethod "$url&date=tomorrow").results
 			$TomorrowSunrise = [DateTime]::ParseExact($TomorrowDaylight.sunrise, "h:mm:ss tt", $null).AddDays(1)
 			LogThis "Sunrise: $Sunrise, Sunset: $Sunset, TomorrowSunrise: $TomorrowSunrise, Now: $Now"  -verboseMessage $true
-			
+
 		}
-		
+
 		$Now = Get-Date
-		
+
 		# Get current theme
 		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
 
 		# Determine the mode
 		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
-			
+
 			if ($CurrentTheme -match "light")  {
 				LogThis "The Mode is already set. No action needed."
 				exit
 			}			
-			
+
 			$NextTriggerTime = $Sunset
-			
+
 			If (DoWeShuffle($LightPath)) {
 				RandomWall -wallpaperDirectory $wallLightPath	
 			}		
-			
+
 			LogThis "Setting the theme  $LightPath"  -verboseMessage $true
 			StartTheme -ThemePath $LightPath
 
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
 			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
-			
+
 			$Name = "Sunset theme"
-			
+
 		} else {
-			
+
 			if ($CurrentTheme -match "dark")  {
 				LogThis "The Mode is already set. No action needed."
 				exit
 			}			
-			
+
 			if ($Now -ge $Sunset) {
 				$NextTriggerTime = $TomorrowSunrise
 			} else {
@@ -441,17 +441,17 @@ $scriptVersion = "1.0.6"
 			If (DoWeShuffle($DarkPath)) {
 				RandomWall -wallpaperDirectory $wallDarkPath	
 			}		
-						
+		
 			LogThis "Setting the theme  $LightPath" -verboseMessage $true
 			StartTheme -ThemePath $DarkPath
 
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
 			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
-			
+
 			$Name = "Sunrise theme"
 
 		}	
-		
+
 		# Schedule next run
 		LogThis "Setting temporary Scheduled Task"
 		$arguments = "-ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
@@ -471,19 +471,19 @@ $scriptVersion = "1.0.6"
 
 		# Unregister the old task if it exists
 		if (TaskExists $Name) {
-			
+
 			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
 			LogThis "Unregistered existing task: $Name"  -verboseMessage $true
 		}
 
 		# Register the new task
 		try {
-			
+
 			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
 			LogThis "Registered new task: $Name"  -verboseMessage $true
-			
+
 		} catch {
-			
+
 			LogThis "Error registering task: $_"
 		}		
 	}
@@ -498,42 +498,41 @@ $scriptVersion = "1.0.6"
 			Exit 1
 		}
 		. $ConfigPath
-		
+
 		# Start logging
 		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 		LogThis "$timestamp === Script started (Version: $scriptVersion)"
 
-		
 		# Check if the script was run recently
 		if($checkLastRun){LastTime}
 
 		# Running from terminal or from Scheduled Task?
 		if (IsRunningFromTerminal) {
-			
+
 			LogThis "Script is running from Terminal." -verboseMessage $true
-			
+
 			# Toggle the theme and exit
 			LogThis "Toggling the Theme"
 			ToggleTheme
 			exit
-			
+
 		} else {
-			
+
 			LogThis "Script is running from Task Scheduler." -verboseMessage $true
 			LogThis "Selecting Theme based on daylight"
 
 			# Main function
 			Main
-		
+
 		}
 
 		# Update last run time
 		UpdateTime
-		
+
 	} catch {
-		
+
 		LogThis "Error: $_"
 	}
 
-	LogThis "All done." 
+	LogThis "All done."
 	exit
