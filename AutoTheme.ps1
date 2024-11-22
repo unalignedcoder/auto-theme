@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.7"
+$scriptVersion = "1.0.8"
 
 # ============= Config file ==============
 
@@ -454,7 +454,7 @@ $scriptVersion = "1.0.7"
 
 		# Schedule next run
 		LogThis "Setting temporary Scheduled Task"
-		$arguments = "-ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
+		$arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
 		$fullCommand = "PowerShell.exe $arguments"
 		LogThis "Full Command: $fullCommand"  -verboseMessage $true
 
