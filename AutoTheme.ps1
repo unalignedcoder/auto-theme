@@ -462,7 +462,8 @@ $scriptVersion = "1.0.5"
 		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
 
 		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-		$principal = New-ScheduledTaskPrincipal -LogonType ServiceAccount -RunLevel Highest
+		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		$principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType ServiceAccount -RunLevel Highest
 		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
 
 		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
