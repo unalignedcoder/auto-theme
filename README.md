@@ -35,7 +35,7 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 
 4) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, make sure that the Action is set up as follows:
 	- Program/script: `Powershell.exe`
-	- Add arguments: `-NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\AutoTheme.ps1"`
+	- Add arguments: `-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\AutoTheme.ps1"`
 	- Run with highest privileges.
 
 	![image](https://github.com/user-attachments/assets/4ec93663-3001-46ce-ad56-b16a623de8b1)
