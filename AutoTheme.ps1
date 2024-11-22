@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.4"
+$scriptVersion = "1.0.5"
 
 # ============= Config file ==============
 	
@@ -462,7 +462,7 @@ $scriptVersion = "1.0.4"
 		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
 
 		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-		$principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+		$principal = New-ScheduledTaskPrincipal -LogonType ServiceAccount -RunLevel Highest
 		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
 
 		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
