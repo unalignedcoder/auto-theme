@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.9"
+$scriptVersion = "1.0.10"
 
 # ============= Config file ==============
 
@@ -256,7 +256,18 @@ $scriptVersion = "1.0.9"
 		param (
 			[string]$ThemePath
 			)
-
+			
+		#restart Theme service, solves issues with theme not being applied
+		if ($themeServiceProblem) {	
+			try {
+				LogThis "Restarting the Themes service..." -verboseMessage $true
+				Restart-Service -Name "Themes" -Force
+				LogThis "Themes service restarted successfully." -verboseMessage $true
+			} catch {
+				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
+			}
+		}
+		
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
 
