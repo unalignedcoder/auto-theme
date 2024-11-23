@@ -48,6 +48,7 @@
 	$verbose = $false
 	$interval = "10" 
 	$checkLastRun = $true
+	$themeServiceProblem = $true
 	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"

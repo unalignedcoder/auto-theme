@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.9"
+$scriptVersion = "1.0.11"
 
 # ============= Config file ==============
 
@@ -71,7 +71,7 @@ $scriptVersion = "1.0.9"
 	}
 
 	# Handle BurntToast Notifications
-	function Show-BurntToastNotification {
+	function BurnedToast {
 		param(
 			[string]$Text,
 			[string]$AppLogo
@@ -256,7 +256,18 @@ $scriptVersion = "1.0.9"
 		param (
 			[string]$ThemePath
 			)
-
+			
+		#restart Theme service, solves issues with theme not being applied
+		if ($themeServiceProblem) {	
+			try {
+				LogThis "Restarting the Themes service..." -verboseMessage $true
+				Restart-Service -Name "Themes" -Force
+				LogThis "Themes service restarted successfully." -verboseMessage $true
+			} catch {
+				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
+			}
+		}
+		
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
 
@@ -421,7 +432,7 @@ $scriptVersion = "1.0.9"
 			StartTheme -ThemePath $LightPath
 
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
-			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
+			BurnedToast -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
 
 			$Name = "Sunset theme"
 
@@ -446,7 +457,7 @@ $scriptVersion = "1.0.9"
 			StartTheme -ThemePath $DarkPath
 
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
-			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
+			BurnedToast -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
 
 			$Name = "Sunrise theme"
 
