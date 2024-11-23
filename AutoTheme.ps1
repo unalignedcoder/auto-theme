@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.8"
+$scriptVersion = "1.0.9"
 
 # ============= Config file ==============
 
@@ -287,7 +287,7 @@ $scriptVersion = "1.0.8"
 		if ($CurrentTheme -match "dark")  {
 
 			If (DoWeShuffle($LightPath)) {
-				RandomWall -wallpaperDirectory $wallLightPath
+				RandomFirstWall -wallpaperDirectory $wallLightPath
 			}
 
 			LogThis "Selected $LightPath"  -verboseMessage $true
@@ -297,7 +297,7 @@ $scriptVersion = "1.0.8"
 		}else {
 
 			If (DoWeShuffle($DarkPath)) {
-				RandomWall -wallpaperDirectory $wallDarkPath
+				RandomFirstWall -wallpaperDirectory $wallDarkPath
 			}
 
 			LogThis "Selected $DarkPath"  -verboseMessage $true
@@ -308,7 +308,7 @@ $scriptVersion = "1.0.8"
 
 	<# Prepend the substring '000_' to one randomly chosen
 	wallpaper filename, so as to make it first pick. #>
-	function RandomWall {
+	function RandomFirstWall {
 		param (
 			[string]$wallpaperDirectory
 		)
@@ -344,13 +344,13 @@ $scriptVersion = "1.0.8"
 		}
 
 		# Select a random wallpaper from the filtered list
-		$randomWallpaper = $newWallpapers | Get-Random
+		$RandomFirstWallpaper = $newWallpapers | Get-Random
 
 		# Construct the new name and rename
-		$newWallpaperName = "000_" + $randomWallpaper.Name
+		$newWallpaperName = "000_" + $RandomFirstWallpaper.Name
 		$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
-		Rename-Item -Path $randomWallpaper.FullName -NewName $newWallpaperNameFull
-		LogThis "Renamed $($randomWallpaper.FullName) to $newWallpaperNameFull"  -verboseMessage $true	
+		Rename-Item -Path $RandomFirstWallpaper.FullName -NewName $newWallpaperNameFull
+		LogThis "Renamed $($RandomFirstWallpaper.FullName) to $newWallpaperNameFull"  -verboseMessage $true	
 	}
 
 	# Check if a Scheduled task exists
@@ -414,7 +414,7 @@ $scriptVersion = "1.0.8"
 			$NextTriggerTime = $Sunset
 
 			If (DoWeShuffle($LightPath)) {
-				RandomWall -wallpaperDirectory $wallLightPath	
+				RandomFirstWall -wallpaperDirectory $wallLightPath	
 			}		
 
 			LogThis "Setting the theme  $LightPath"  -verboseMessage $true
@@ -439,7 +439,7 @@ $scriptVersion = "1.0.8"
 			}
 
 			If (DoWeShuffle($DarkPath)) {
-				RandomWall -wallpaperDirectory $wallDarkPath	
+				RandomFirstWall -wallpaperDirectory $wallDarkPath	
 			}		
 		
 			LogThis "Setting the theme  $LightPath" -verboseMessage $true
@@ -462,8 +462,10 @@ $scriptVersion = "1.0.8"
 		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
 
 		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-		$principal = New-ScheduledTaskPrincipal -UserId $currentUser -LogonType ServiceAccount -RunLevel Highest
+		#$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		#$userSid = $currentUser.User.Value  # Get the SID of the current user
+		$userSid = $env:USERNAME
+		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
 		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
 
 		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
@@ -471,21 +473,19 @@ $scriptVersion = "1.0.8"
 
 		# Unregister the old task if it exists
 		if (TaskExists $Name) {
-
 			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
 			LogThis "Unregistered existing task: $Name"  -verboseMessage $true
 		}
 
 		# Register the new task
 		try {
-
 			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
 			LogThis "Registered new task: $Name"  -verboseMessage $true
-
 		} catch {
-
 			LogThis "Error registering task: $_"
-		}		
+		}
+
+	
 	}
 
 # ============= RUNTIME  ==============
