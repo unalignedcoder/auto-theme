@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.11"
+$scriptVersion = "1.0.13"
 
 # ============= Config file ==============
 
@@ -378,6 +378,8 @@ $scriptVersion = "1.0.11"
 	then schedules the next appropriate temporary Task #>
 	function Main {
 
+		$Now = Get-Date
+
 		if ($UseFixedHours) {
 
 			# stay offline
@@ -409,15 +411,14 @@ $scriptVersion = "1.0.11"
 
 		}
 
-		$Now = Get-Date
-
 		# Get current theme
 		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
 
 		# Determine the mode
+		# Afer Sunrise and Before Sunset
 		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
 
-			if ($CurrentTheme -match "light")  {
+			if ($CurrentTheme -match $themeLight)  {
 
 				LogThis "The Mode is already set. No action needed."
 				exit
@@ -430,17 +431,19 @@ $scriptVersion = "1.0.11"
 				RandomFirstWall -wallpaperDirectory $wallLightPath	
 			}		
 
+			# set Light theme
 			LogThis "Setting the theme  $LightPath"  -verboseMessage $true
 			StartTheme -ThemePath $LightPath
 
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
 			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
 
+			# assign name for next temporary task
 			$Name = "Sunset theme"
 
 		} else {
 
-			if ($CurrentTheme -match "dark")  {
+			if ($CurrentTheme -match $themeDark)  {
 				LogThis "The Mode is already set. No action needed."
 				exit
 			}			
@@ -457,13 +460,15 @@ $scriptVersion = "1.0.11"
 
 				RandomFirstWall -wallpaperDirectory $wallDarkPath	
 			}		
-		
-			LogThis "Setting the theme  $LightPath" -verboseMessage $true
+			
+			# set Dark theme
+			LogThis "Setting the theme  $DarkPath" -verboseMessage $true
 			StartTheme -ThemePath $DarkPath
 
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
 			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
 
+			# assign name for next temporary task
 			$Name = "Sunrise theme"
 
 		}	
@@ -478,8 +483,6 @@ $scriptVersion = "1.0.11"
 		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
 
 		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-		#$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-		#$userSid = $currentUser.User.Value  # Get the SID of the current user
 		$userSid = $env:USERNAME
 		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
 		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
