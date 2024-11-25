@@ -71,7 +71,7 @@ $scriptVersion = "1.0.11"
 	}
 
 	# Handle BurntToast Notifications
-	function BurnedToast {
+	function Show-BurntToastNotification {
 		param(
 			[string]$Text,
 			[string]$AppLogo
@@ -418,6 +418,7 @@ $scriptVersion = "1.0.11"
 		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
 
 			if ($CurrentTheme -match "light")  {
+
 				LogThis "The Mode is already set. No action needed."
 				exit
 			}			
@@ -425,6 +426,7 @@ $scriptVersion = "1.0.11"
 			$NextTriggerTime = $Sunset
 
 			If (DoWeShuffle($LightPath)) {
+
 				RandomFirstWall -wallpaperDirectory $wallLightPath	
 			}		
 
@@ -432,7 +434,7 @@ $scriptVersion = "1.0.11"
 			StartTheme -ThemePath $LightPath
 
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
-			BurnedToast -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
+			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
 
 			$Name = "Sunset theme"
 
@@ -445,11 +447,14 @@ $scriptVersion = "1.0.11"
 
 			if ($Now -ge $Sunset) {
 				$NextTriggerTime = $TomorrowSunrise
+
 			} else {
+
 				$NextTriggerTime = $Sunrise
 			}
 
 			If (DoWeShuffle($DarkPath)) {
+
 				RandomFirstWall -wallpaperDirectory $wallDarkPath	
 			}		
 		
@@ -457,7 +462,7 @@ $scriptVersion = "1.0.11"
 			StartTheme -ThemePath $DarkPath
 
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
-			BurnedToast -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
+			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
 
 			$Name = "Sunrise theme"
 
@@ -484,15 +489,19 @@ $scriptVersion = "1.0.11"
 
 		# Unregister the old task if it exists
 		if (TaskExists $Name) {
+
 			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
 			LogThis "Unregistered existing task: $Name"  -verboseMessage $true
 		}
 
 		# Register the new task
 		try {
+
 			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
 			LogThis "Registered new task: $Name"  -verboseMessage $true
+
 		} catch {
+
 			LogThis "Error registering task: $_"
 		}
 
