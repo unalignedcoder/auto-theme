@@ -5,9 +5,11 @@
 	$themeLight = "Name-of-Light.theme"
 	$themeDark = "Name-of-Dark.theme"
 
-	<# Complete path to the .theme files. You can use a system path to default Windows themes,
-	a custom path of your choice, or even no path if the files are in the same folder as the script.
-	However, consider that Windows will always copy your custom .theme files to LocalAppData. #>
+	<# Complete path to the .theme files. You can use a system path to default Windows themes
+	(as proposed in the example below) or a custom path of your choice.
+	However, consider that Windows will always copy your custom .theme files to LocalAppData. 
+	In order to use .theme files located in the script folder, you can use this:
+	$LightPath = Join-Path $PSScriptRoot $themeLight #>
 	$LightPath = Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeLight
 	$DarkPath =  Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeDark
 

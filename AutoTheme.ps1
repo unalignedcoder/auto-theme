@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.11"
+$scriptVersion = "1.0.12"
 
 # ============= Config file ==============
 
