@@ -9,11 +9,11 @@ The script is designed to run in the background as a scheduled task, ensuring th
 It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
 Alternatively, it can use hours provided by the user, thus staying offline.
 The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
-If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the themes.
+If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the   themes.
 #>
 
 # Script version
-$scriptVersion = "1.0.14"
+$scriptVersion = "1.0.15"
 
 # ============= Config file ==============
 
