@@ -13,7 +13,7 @@ If otherwise the script is run from terminal, as './AutoTheme.ps1', it only swit
 #>
 
 # Script version
-$scriptVersion = "1.0.13"
+$scriptVersion = "1.0.14"
 
 # ============= Config file ==============
 
@@ -78,9 +78,9 @@ $scriptVersion = "1.0.13"
 		)
 
 		# Install the BurntToast module if not already installed
-		if (-not (Get-Module -Name BurntToast -ListAvailable)) {
+		<# if (-not (Get-Module -Name BurntToast -ListAvailable)) {
 			Install-Module -Name BurntToast -Scope CurrentUser
-		}
+		} #>
 
 		# for when the above is commented out or fails, we double-check.
 		if (Get-Module -Name BurntToast -ListAvailable) {
@@ -226,7 +226,7 @@ $scriptVersion = "1.0.13"
 
 			# Check for the start of the [Slideshow] section
 			if ($line -match '^\[Slideshow\]') {
-				LogThis "Found [Slideshow] section" -verboseMessage $true
+				LogThis "Found Slideshow section" -verboseMessage $true
 				$inSlideshowSection = $true
 				continue
 			}
@@ -304,6 +304,7 @@ $scriptVersion = "1.0.13"
 			LogThis "Selected $LightPath"  -verboseMessage $true
 			StartTheme $LightPath
 			LogThis "$themeLight activated"
+			Show-BurntToastNotification -Text "Theme toggled. $LightPath activated." -AppLogo "autotheme.png"
 
 		}else {
 
@@ -314,6 +315,7 @@ $scriptVersion = "1.0.13"
 			LogThis "Selected $DarkPath"  -verboseMessage $true
 			StartTheme $DarkPath
 			LogThis "$themeDark activated"
+			Show-BurntToastNotification -Text "Theme toggled. $themeDark activated." -AppLogo "autotheme.png"
 		}
 	}
 
@@ -397,17 +399,33 @@ $scriptVersion = "1.0.13"
 			$lng = $location.Longitude
 			$tzid = $location.Timezone
 
-			$url = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng&tzid=$tzid"
+			#$url = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng&tzid=$tzid&formatted=0"
+			$url = "https://api.sunrisesunset.io/json?lat=$lat&lng=$lng"
 			$Daylight = (Invoke-RestMethod $url).results
-			LogThis "Fetched daylight data." -verboseMessage $true
-
+			LogThis "Fetched daylight data string = $Daylight" -verboseMessage $true
+			
 			# Parse and adjust the dates
-			$Sunrise = [DateTime]::ParseExact($Daylight.sunrise, "h:mm:ss tt", $null)
-			$Sunset = [DateTime]::ParseExact($Daylight.sunset, "h:mm:ss tt", $null)
+			#$Sunrise = [DateTime]::ParseExact($Daylight.sunrise, "h:mm:ss tt", $null)
+			#$Sunset = [DateTime]::ParseExact($Daylight.sunset, "h:mm:ss tt", $null)
+			
+			$SunriseTimeString = $Daylight.sunrise
+			$SunriseDateString = $Daylight.date
+			$SunriseString = "$SunriseTimeString $SunriseDateString"
+			$Sunrise = [DateTime]::ParseExact($SunriseString, "h:mm:ss tt yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
 
+			$SunsetTimeString = $Daylight.sunset
+			$SunsetDateString = $Daylight.date
+			$SunsetString = "$SunsetTimeString $SunsetDateString"
+			$Sunset = [DateTime]::ParseExact($SunsetString, "h:mm:ss tt yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
+			
+			# second query for tomorrow
 			$TomorrowDaylight = (Invoke-RestMethod "$url&date=tomorrow").results
-			$TomorrowSunrise = [DateTime]::ParseExact($TomorrowDaylight.sunrise, "h:mm:ss tt", $null).AddDays(1)
-			LogThis "Sunrise: $Sunrise, Sunset: $Sunset, TomorrowSunrise: $TomorrowSunrise, Now: $Now"  -verboseMessage $true
+			
+			$TomorrowSunriseTimeString = $TomorrowDaylight.sunrise
+			$TomorrowSunriseDateString = $TomorrowDaylight.date
+			$TomorrowSunriseString =  "$TomorrowSunriseTimeString $TomorrowSunriseDateString"
+			$TomorrowSunrise = [DateTime]::ParseExact($TomorrowSunriseString, "h:mm:ss tt yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
+			LogThis "Sunrise: $Sunrise, Sunset: $Sunset, TomorrowSunrise: $TomorrowSunrise, Now: $Now" -verboseMessage $true
 
 		}
 
