@@ -22,7 +22,7 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 
 2) Open the file `Config.ps1` and modify the following variables as preferred:
 
-	![image](https://github.com/user-attachments/assets/8f667722-820f-4506-8e7b-0f6d80bfa684)
+ 	![image](https://github.com/user-attachments/assets/059c57d9-b502-4467-a3de-bbaeb7ed01b8)
 
 	- `themeLight` and `themeDark` should be the names of your custom `.theme` files.
 	- `LightPath` and `$DarPath`should be the paths to your custom `.theme` files. Usually Windows saves them in `C:\Users\%username%\AppData\Local\Microsoft\Windows\Themes\`.
