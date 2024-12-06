@@ -54,11 +54,28 @@ if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
     Pause
     Exit 0
 }
+# Create the triggers
+$LogonTrigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERNAME"
+# Create the Unlock Trigger using CIM
+# Thanks https://stackoverflow.com/questions/53704188/syntax-for-execute-on-workstation-unlock
+$StateChangeTrigger = Get-CimClass `
+    -Namespace ROOT\Microsoft\Windows\TaskScheduler `
+    -ClassName MSFT_TaskSessionStateChangeTrigger
 
-# Create the scheduled task if it doesn't exist
-$Trigger = New-ScheduledTaskTrigger -AtLogOn
+$UnlockTrigger = New-CimInstance `
+    -CimClass $StateChangeTrigger `
+    -Property @{
+        StateChange = 8  # 8 = TASK_SESSION_UNLOCK
+		UserId = "$env:USERNAME"
+    } `
+    -ClientOnly
+$Triggers = @($LogonTrigger, $UnlockTrigger)
+
+# Create the action
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
-Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User "$env:USERNAME" -Action $Action -RunLevel Highest -Force | Out-Null
+
+# Register the task
+Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User "$env:USERNAME" -Action $Action -RunLevel Highest -Force | Out-Null
 
 Write-Host "Scheduled task '$TaskName' created successfully!" -ForegroundColor Cyan
 
@@ -77,3 +94,4 @@ if ($runNow -match '^(Yes|Y)$') {
 } else {
     Write-Host "You chose not to run the task. Setup is complete." -ForegroundColor Yellow
 }
+

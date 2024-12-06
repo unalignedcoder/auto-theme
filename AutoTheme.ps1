@@ -9,11 +9,11 @@ The script is designed to run in the background as a scheduled task, ensuring th
 It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
 Alternatively, it can use hours provided by the user, thus staying offline.
 The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
-If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the   themes.
+If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the themes.
 #>
 
 # Script version
-$scriptVersion = "1.0.15"
+$scriptVersion = "1.0.17"
 
 # ============= Config file ==============
 
@@ -397,10 +397,12 @@ $scriptVersion = "1.0.15"
 			# Extract latitude, longitude and Timezone for API call
 			$lat = $location.Latitude
 			$lng = $location.Longitude
-			$tzid = $location.Timezone
 
-			#$url = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng&tzid=$tzid&formatted=0"
+			# Either API can be used, but the first one may have faulty control over DateTime formatting
+			#$url = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng"
 			$url = "https://api.sunrisesunset.io/json?lat=$lat&lng=$lng"
+
+
 			$Daylight = (Invoke-RestMethod $url).results
 			LogThis "Fetched daylight data string = $Daylight" -verboseMessage $true
 			
@@ -525,8 +527,6 @@ $scriptVersion = "1.0.15"
 
 			LogThis "Error registering task: $_"
 		}
-
-	
 	}
 
 # ============= RUNTIME  ==============
@@ -569,11 +569,9 @@ $scriptVersion = "1.0.15"
 
 		# Update last run time
 		UpdateTime
+		LogThis "All done."
 
 	} catch {
 
 		LogThis "Error: $_"
 	}
-
-	LogThis "All done."
-	exit

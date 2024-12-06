@@ -7,7 +7,7 @@
 
 	<# Complete path to the .theme files. You can use a system path to default Windows themes
 	(as proposed in the example below) or a custom path of your choice.
-	However, consider that Windows will always copy your custom .theme files to LocalAppData. 
+	However, consider that Windows will always copy your .theme files to LocalAppData. 
 	In order to use .theme files located in the script folder, you can use this:
 	$LightPath = Join-Path $PSScriptRoot $themeLight #>
 	$LightPath = Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeLight
@@ -26,16 +26,13 @@
 	$UseUserLoc = $false
 
 	<# User-defined coordinates  
-	(only needed if $UseFixedHours = $false) #>
+	(only needed if $UseUserLoc = $true nd $UseFixedHours = $false) #>
 	$UserLat = "40.7128" 
 	$UserLng = "-74.0060"
-
-	<# User-defined timezone
-	(only needed if $UseFixedHours = $false) #>
-	$UserTzid = "America/New_York"  
 	
-	<# Randomize first wallpaper: Even if 'shuffle=1' is set in a `.theme` file
-	Windows will always use the first wallpaper in alphabetic order as the first. #>
+	<# Randomize first wallpaper: Even if 'shuffle=1' is set in a .theme file
+	Windows will always use the first wallpaper in alphabetic order as the first.
+	Setting this to $true offers more variety as soon as the theme is applied. #>
 	$RandomFirst = $true
 
 	<# Paths to the folders for light and dark wallpapers.
