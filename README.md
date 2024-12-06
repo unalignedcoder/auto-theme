@@ -22,7 +22,7 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 
 2) Open the file `Config.ps1` and modify the following variables as preferred:
 
-	![image](https://github.com/user-attachments/assets/2d0b57f1-3f0a-4829-812e-d9cb6fa27031)
+	![image](https://github.com/user-attachments/assets/8f667722-820f-4506-8e7b-0f6d80bfa684)
 
 	- `themeLight` and `themeDark` should be the names of your custom `.theme` files.
 	- `LightPath` and `$DarPath`should be the paths to your custom `.theme` files. Usually Windows saves them in `C:\Users\%username%\AppData\Local\Microsoft\Windows\Themes\`.
@@ -31,9 +31,9 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 	- `$UseUserLoc` should be set to `$true` if the user provides the exact coordinates and timezone in the following variables. If set to `$false`, the script will try to find the location using System Location or the IP address.
 	- `$RandomFirst` should be set to `$true` if you want the script to randomize the first wallpaper shown after the theme has been changed. Windows, in fact, even when `shuffle=1`is indicated in the `.theme` file, always starts with the first alphabetical image in the list. If this is set to `$true`, the user should provide the paths to the wallpaper slideshow folders in the following variables. These should be the same as indicated in the `[Slideshow]` section of the `.theme` file.
 
-3) (optional) Run the script `Setup.ps1` to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
+4) (optional) Run the script `Setup.ps1` to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
 
-4) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, make sure that the Action is set up as follows:
+5) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, make sure that the Action is set up as follows:
 	- Program/script: `Powershell.exe`
 	- Add arguments: `-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\AutoTheme.ps1"`
 	- Run with highest privileges.
@@ -46,7 +46,7 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 	
 	<b>It is also advisable to add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out for example Slideshow customization and resulting in a hybrid "Custom" theme.</b>
 
-5) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location.
+6) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location.
 
 ## Usage
 This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user. 
