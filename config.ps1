@@ -29,10 +29,6 @@
 	(only needed if $UseFixedHours = $false) #>
 	$UserLat = "40.7128" 
 	$UserLng = "-74.0060"
-
-	<# User-defined timezone
-	(only needed if $UseFixedHours = $false) #>
-	$UserTzid = "America/New_York"  
 	
 	<# Randomize first wallpaper: Even if 'shuffle=1' is set in a `.theme` file
 	Windows will always use the first wallpaper in alphabetic order as the first. #>

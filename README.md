@@ -43,6 +43,8 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 	![image](https://github.com/user-attachments/assets/048e6e91-fe0e-4bf0-905c-3beb2aeb4385)
 
 	![image](https://github.com/user-attachments/assets/f2dcbd94-beee-477d-8f5c-5868c3780dc0)
+	
+	<b>It is also advisable to add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out for example Slideshow customization and resulting in a hybrid "Custom" theme.</b>
 
 5) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location.
 
