@@ -4,12 +4,14 @@ Changes the active Windows theme based on a predefined schedule.
 
 .DESCRIPTION
 This Powershell script automatically switches the Windows theme based on Sunrise and Sunset, or hours set by the user.
-Rather than using registry/system settings, it selects a given .theme file. This allows for a much higher degree of customization.
+Rather than using registry/system settings, it works by selecting given .theme files. 
+This allows for a much higher degree of customization.
 The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
 Alternatively, it can use hours provided by the user, thus staying offline.
 The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
-If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between the themes.
+If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between themes.
+IMPORTANT: Use config.ps1 to configure the script. Use Setup.ps1 to create the Scheduled Task.
 #>
 
 # Script version
@@ -17,7 +19,7 @@ $scriptVersion = "1.0.17"
 
 # ============= Config file ==============
 
-	$ConfigPath = "$PSScriptRoot\config.ps1"
+	$ConfigPath = Join-Path $PSScriptRoot "config.ps1"
 
 # ============= FUNCTIONS  ==============
 
@@ -69,6 +71,54 @@ $scriptVersion = "1.0.17"
 			}
 		}
 	}
+	
+	# Trim old log entries
+	function TrimOldLog {
+		param (
+			[string]$logFilePath,    # Path to the log file
+			[int]$maxSessions = 30  # Maximum number of log sessions to keep
+		)
+
+		if (-Not $trimLog) {
+			return
+		}
+
+		if (-Not (Test-Path $logFilePath)) {
+			# Log file doesn't exist, no need to trim
+			Write-Output "Log file doesn't exist, no need to trim"
+			return
+		}
+
+		# Read all lines from the log file
+		Write-Output "Reading all lines from the log file"
+		$logLines = Get-Content -Path $logFilePath
+
+		# Find the indices of all session start lines
+		$sessionStartIndices = @()
+		for ($i = 0; $i -lt $logLines.Count; $i++) {
+			if ($logLines[$i] -match '=== Script started \(Version: .*?\)') {
+				$sessionStartIndices += $i
+			}
+		}
+
+		# Check if the number of sessions exceeds the maximum allowed
+		if ($sessionStartIndices.Count -le $maxSessions) {
+			# No need to trim the log
+			Write-Output "Log file is small, no need to trim"
+			return
+		}
+
+		# Calculate how many sessions to remove
+		$sessionsToRemove = $sessionStartIndices.Count - $maxSessions
+
+		# Identify the range of lines to keep
+		$startIndexToKeep = $sessionStartIndices[$sessionsToRemove]
+
+		# Extract the lines to keep and overwrite the log file
+		Write-Output "Extracting the log lines to keep, and overwriting the log file"
+		$linesToKeep = $logLines[$startIndexToKeep..($logLines.Count - 1)]
+		Set-Content -Path $logFilePath -Value $linesToKeep
+	}
 
 	# Handle BurntToast Notifications
 	function Show-BurntToastNotification {
@@ -86,9 +136,9 @@ $scriptVersion = "1.0.17"
 		if (Get-Module -Name BurntToast -ListAvailable) {
 
 			try {
-
-				$logoFullPath = Join-Path -Path $PSScriptRoot -ChildPath $AppLogo
-				New-BurntToastNotification -Text $Text -AppLogo $logoFullPath
+				
+				LogThis "Creating BurnToast notification"  -verboseMessage $true
+				New-BurntToastNotification -Text $Text -AppLogo $AppLogo
 
 				LogThis "Displayed BurntToast notification with text: $Text and logo: $logoFullPath"  -verboseMessage $true
 
@@ -304,7 +354,7 @@ $scriptVersion = "1.0.17"
 			LogThis "Selected $LightPath"  -verboseMessage $true
 			StartTheme $LightPath
 			LogThis "$themeLight activated"
-			Show-BurntToastNotification -Text "Theme toggled. $LightPath activated." -AppLogo "autotheme.png"
+			Show-BurntToastNotification -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
 
 		}else {
 
@@ -315,7 +365,7 @@ $scriptVersion = "1.0.17"
 			LogThis "Selected $DarkPath"  -verboseMessage $true
 			StartTheme $DarkPath
 			LogThis "$themeDark activated"
-			Show-BurntToastNotification -Text "Theme toggled. $themeDark activated." -AppLogo "autotheme.png"
+			Show-BurntToastNotification -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
 		}
 	}
 
@@ -326,6 +376,8 @@ $scriptVersion = "1.0.17"
 			[string]$wallpaperDirectory
 		)
 
+
+		
 		if (-Not ($RandomFirst)) {
 			
 			LogThis "The first wallpaper will not be randomized."  -verboseMessage $true			
@@ -339,12 +391,20 @@ $scriptVersion = "1.0.17"
 		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
 
 		# Check if there's already a file with "000_" prefix and rename it back
-		$existingRenamedWallpaper = $wallpapers | Where-Object { $_.Name.StartsWith("000_") }
-		if ($existingRenamedWallpaper) {
-			$originalName = $existingRenamedWallpaper.Name -replace '^000_', ''
-			$originalNameFull = Join-Path $wallpaperDirectory $originalName
-			Rename-Item -Path $existingRenamedWallpaper.FullName -NewName $originalNameFull
-			LogThis "Removed '000_' prefix from $($existingRenamedWallpaper.FullName)"  -verboseMessage $true
+		if ($existingRenamedWallpapers) {
+			
+			# in case there's more than one file starting with 000_, rename all of them.
+			foreach ($wallpaper in $existingRenamedWallpapers) {
+				$originalName = $wallpaper.Name -replace '^000_', ''
+				
+				LogThis "wallpaperDirectory: $wallpaperDirectory" -verboseMessage $true
+				LogThis "originalName: $originalName" -verboseMessage $true
+				
+				$originalNameFull = Join-Path $wallpaperDirectory $originalName
+				Rename-Item -Path $wallpaper.FullName -NewName $originalNameFull
+				
+				LogThis "Removed '000_' prefix from $($wallpaper.FullName)" -verboseMessage $true
+			}
 		}
 
 		# Filter out wallpapers that still have "000_" in the name (unlikely after removal)
@@ -456,7 +516,7 @@ $scriptVersion = "1.0.17"
 			StartTheme -ThemePath $LightPath
 
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
-			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
+			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 
 			# assign name for next temporary task
 			$Name = "Sunset theme"
@@ -486,7 +546,7 @@ $scriptVersion = "1.0.17"
 			StartTheme -ThemePath $DarkPath
 
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
-			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo "autotheme.png"
+			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 
 			# assign name for next temporary task
 			$Name = "Sunrise theme"
@@ -539,7 +599,10 @@ $scriptVersion = "1.0.17"
 			Exit 1
 		}
 		. $ConfigPath
-
+		
+		# Trim old log sessions
+		TrimOldLog -logFilePath $logFile -maxSessions $maxLogEntries
+		
 		# Start logging
 		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 		LogThis "$timestamp === Script started (Version: $scriptVersion)"

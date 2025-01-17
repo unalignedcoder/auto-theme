@@ -30,7 +30,7 @@
 	$UserLat = "40.7128" 
 	$UserLng = "-74.0060"
 	
-	<# Randomize first wallpaper: Even if 'shuffle=1' is set in a .theme file
+	<# Randomize first wallpaper: Even if 'shuffle=1' is set in a .theme file,
 	Windows will always use the first wallpaper in alphabetic order as the first.
 	Setting this to $true offers more variety as soon as the theme is applied. #>
 	$RandomFirst = $true
@@ -44,10 +44,13 @@
 # ============= Developer variables ==============
 
 	$log = false
+	$trimLog = $true
 	$verbose = $false
 	$interval = "10" 
 	$checkLastRun = $true
 	$themeServiceProblem = $true
+	$maxLogEntries = 30
 	
+	$appLogo = Join-Path $PSScriptRoot "autotheme.png"	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
