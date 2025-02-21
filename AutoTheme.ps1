@@ -11,11 +11,11 @@ It only connects to the internet to verify Location and Sunrise and Sunset times
 Alternatively, it can use hours provided by the user, thus staying offline.
 The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
 If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between themes.
-IMPORTANT: Use config.ps1 to configure the script. Use Setup.ps1 to create the Scheduled Task.
+IMPORTANT: Edit config.ps1 to configure this script. Run Setup.ps1 to create the Scheduled Task.
 #>
 
 # Script version
-$scriptVersion = "1.0.17"
+$scriptVersion = "1.0.18"
 
 # ============= Config file ==============
 
@@ -128,9 +128,9 @@ $scriptVersion = "1.0.17"
 		)
 
 		# Install the BurntToast module if not already installed
-		<# if (-not (Get-Module -Name BurntToast -ListAvailable)) {
+		if (-not (Get-Module -Name BurntToast -ListAvailable)) {
 			Install-Module -Name BurntToast -Scope CurrentUser
-		} #>
+		}
 
 		# for when the above is commented out or fails, we double-check.
 		if (Get-Module -Name BurntToast -ListAvailable) {
@@ -376,55 +376,51 @@ $scriptVersion = "1.0.17"
 			[string]$wallpaperDirectory
 		)
 
-
-		
 		if (-Not ($RandomFirst)) {
-			
-			LogThis "The first wallpaper will not be randomized."  -verboseMessage $true			
+			LogThis "The first wallpaper will not be randomized."  -verboseMessage $true
 			return
 		}
 
 		LogThis "Randomizing first wallpaper."  -verboseMessage $true
-
-		# Retrieve file objects directly into $wallpapers
 		LogThis "Looking in $wallpaperDirectory"  -verboseMessage $true
+
+		# Retrieve all wallpaper files
 		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
 
-		# Check if there's already a file with "000_" prefix and rename it back
-		if ($existingRenamedWallpapers) {
-			
-			# in case there's more than one file starting with 000_, rename all of them.
+		# Find all wallpapers that have '000_' prefix
+		$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^000_' }
+
+		# If any exist, rename them back to their original names
+		if ($existingRenamedWallpapers.Count -gt 0) {
 			foreach ($wallpaper in $existingRenamedWallpapers) {
 				$originalName = $wallpaper.Name -replace '^000_', ''
-				
-				LogThis "wallpaperDirectory: $wallpaperDirectory" -verboseMessage $true
-				LogThis "originalName: $originalName" -verboseMessage $true
-				
 				$originalNameFull = Join-Path $wallpaperDirectory $originalName
-				Rename-Item -Path $wallpaper.FullName -NewName $originalNameFull
 				
-				LogThis "Removed '000_' prefix from $($wallpaper.FullName)" -verboseMessage $true
+				LogThis "Restoring original name: $($wallpaper.FullName) → $originalNameFull" -verboseMessage $true
+				Rename-Item -Path $wallpaper.FullName -NewName $originalNameFull -Force
 			}
 		}
 
-		# Filter out wallpapers that still have "000_" in the name (unlikely after removal)
-		$newWallpapers = $wallpapers | Where-Object { -not $_.Name.StartsWith("000_") }
+		# Refresh the list of wallpapers after renaming
+		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File #| Where-Object { -not $_.Name -match '^000_' }
 
 		# Ensure there are wallpapers available to rename
-		if ($newWallpapers.Count -eq 0) {
-			LogThis "No wallpapers available for renaming."  -verboseMessage $true
+		if ($wallpapers.Count -eq 0) {
+			LogThis "No wallpapers available for renaming." -verboseMessage $true
 			return
 		}
 
-		# Select a random wallpaper from the filtered list
-		$RandomFirstWallpaper = $newWallpapers | Get-Random
+		# Select a random wallpaper
+		$RandomFirstWallpaper = $wallpapers | Get-Random
 
-		# Construct the new name and rename
+		# Rename it with "000_" prefix
 		$newWallpaperName = "000_" + $RandomFirstWallpaper.Name
 		$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
-		Rename-Item -Path $RandomFirstWallpaper.FullName -NewName $newWallpaperNameFull
-		LogThis "Renamed $($RandomFirstWallpaper.FullName) to $newWallpaperNameFull"  -verboseMessage $true	
+		Rename-Item -Path $RandomFirstWallpaper.FullName -NewName $newWallpaperNameFull -Force
+
+		LogThis "Renamed $($RandomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
 	}
+
 
 	# Check if a Scheduled task exists
 	function TaskExists {
@@ -437,7 +433,7 @@ $scriptVersion = "1.0.17"
 	}
 
 	<# Select the Theme depending on daylight or chosen hours,
-	then schedules the next appropriate temporary Task #>
+	then schedules the next appropriate Temporary Task #>
 	function Main {
 
 		$Now = Get-Date
