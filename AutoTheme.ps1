@@ -5,7 +5,7 @@ Changes the active Windows theme based on a predefined schedule.
 .DESCRIPTION
 This Powershell script automatically switches the Windows theme based on Sunrise and Sunset, or hours set by the user.
 Rather than using registry/system settings, it works by selecting given .theme files. 
-This allows for a much higher degree of customization.
+This allows for a much higher degree of customization and compatibility.
 The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
 Alternatively, it can use hours provided by the user, thus staying offline.
@@ -15,7 +15,7 @@ IMPORTANT: Edit config.ps1 to configure this script. Run Setup.ps1 to create the
 #>
 
 # Script version
-$scriptVersion = "1.0.18"
+$scriptVersion = "1.0.19"
 
 # ============= Config file ==============
 
@@ -369,7 +369,7 @@ $scriptVersion = "1.0.18"
 		}
 	}
 
-	<# Prepend the substring '000_' to one randomly chosen
+	<# Prepend the substring '_0_AutoTheme_' to one randomly chosen
 	wallpaper filename, so as to make it first pick. #>
 	function RandomFirstWall {
 		param (
@@ -387,13 +387,19 @@ $scriptVersion = "1.0.18"
 		# Retrieve all wallpaper files
 		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
 
-		# Find all wallpapers that have '000_' prefix
-		$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^000_' }
+		# Ensure there are wallpapers available
+		if ($wallpapers.Count -eq 0) {
+			LogThis "No wallpapers available." -verboseMessage $true
+			return
+		}
+
+		# Find all wallpapers that have '_0_AutoTheme_' prefix
+		$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^_0_AutoTheme_' }
 
 		# If any exist, rename them back to their original names
 		if ($existingRenamedWallpapers.Count -gt 0) {
 			foreach ($wallpaper in $existingRenamedWallpapers) {
-				$originalName = $wallpaper.Name -replace '^000_', ''
+				$originalName = $wallpaper.Name -replace '^_0_AutoTheme_', ''
 				$originalNameFull = Join-Path $wallpaperDirectory $originalName
 				
 				LogThis "Restoring original name: $($wallpaper.FullName) → $originalNameFull" -verboseMessage $true
@@ -402,25 +408,18 @@ $scriptVersion = "1.0.18"
 		}
 
 		# Refresh the list of wallpapers after renaming
-		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File #| Where-Object { -not $_.Name -match '^000_' }
-
-		# Ensure there are wallpapers available to rename
-		if ($wallpapers.Count -eq 0) {
-			LogThis "No wallpapers available for renaming." -verboseMessage $true
-			return
-		}
+		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
 
 		# Select a random wallpaper
 		$RandomFirstWallpaper = $wallpapers | Get-Random
 
-		# Rename it with "000_" prefix
-		$newWallpaperName = "000_" + $RandomFirstWallpaper.Name
+		# Rename it with "_0_AutoTheme_" prefix
+		$newWallpaperName = "_0_AutoTheme_" + $RandomFirstWallpaper.Name
 		$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
 		Rename-Item -Path $RandomFirstWallpaper.FullName -NewName $newWallpaperNameFull -Force
 
 		LogThis "Renamed $($RandomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
 	}
-
 
 	# Check if a Scheduled task exists
 	function TaskExists {

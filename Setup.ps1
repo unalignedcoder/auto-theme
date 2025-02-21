@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
 Initial setup script for Auto Theme.
+
 .DESCRIPTION
 Sets up the Auto Theme script and scheduled task if not already configured. Automatically requests admin privileges if not run as admin.
 #>
@@ -56,8 +57,9 @@ if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
 }
 # Create the triggers
 $LogonTrigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERNAME"
-# Create the Unlock Trigger using CIM
-# Thanks https://stackoverflow.com/questions/53704188/syntax-for-execute-on-workstation-unlock
+
+<# Create the Unlock Trigger using CIM, Thanks to
+https://stackoverflow.com/questions/53704188/syntax-for-execute-on-workstation-unlock #>
 $StateChangeTrigger = Get-CimClass `
     -Namespace ROOT\Microsoft\Windows\TaskScheduler `
     -ClassName MSFT_TaskSessionStateChangeTrigger
@@ -76,7 +78,6 @@ $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowSt
 
 # Register the task
 Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User "$env:USERNAME" -Action $Action -RunLevel Highest -Force | Out-Null
-
 Write-Host "Scheduled task '$TaskName' created successfully!" -ForegroundColor Cyan
 
 # Prompt the user to run the task immediately
