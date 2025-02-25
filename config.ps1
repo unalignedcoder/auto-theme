@@ -15,7 +15,6 @@
 
 	# Use fixed hours to switch Themes (keeps the script offline)
 	$UseFixedHours = $false
-
 	# Fixed hours for theme change (only needed if $UseFixedHours = $true)
 	$LightThemeTime = "07:00 AM"
 	$DarkThemeTime = "07:00 PM"
@@ -40,18 +39,18 @@
 	(only needed if $randomFirst = true) #>
 	$wallLightPath = "Path\to\Light\wallpapers"
 	$wallDarkPath = "Path\to\Dark\wallpapers"
-
+	
 # ============= Extra apps variables =============
 
 	<# Sysinternals' Process Explorer doesn't automatically change theme when
-	the system theme is changed. Use this variable if you want to restart it. #>
-	$RestartProcexp = $false
+	the system theme is changed. Use this variable if you want it to be restarted. #>
+	$RestartProcexp = $true
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
-	This is experimental, sometimes might not work.
+	This is experimental. May not always work.
 	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
-	$TrueLaunch = $false
-	$TrueLaunchiniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\Setup.ini"
+	$TrueLaunch = $true
+	$TrueLaunchiniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\setup.ini"
 	
 # ============= Developer variables ==============
 
@@ -60,10 +59,10 @@
 	$verbose = $false
 	$interval = "10" 
 	$checkLastRun = $true
-	$themeServiceProblem = $true # may require script to be run as admin
+	$themeServiceProblem = $false # may require script to be run as admin
 	$maxLogEntries = "10"
 
-	$forceAsAdmin = $true
+	$forceAsAdmin = $false
 	
 	$appLogo = Join-Path $PSScriptRoot "autotheme.png"	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"

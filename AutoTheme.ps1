@@ -15,7 +15,7 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.25"
+$scriptVersion = "1.0.26"
 
 
 # ============= Config file ==============
@@ -624,6 +624,25 @@ $scriptVersion = "1.0.25"
 		}
 	}
 
+	# Run script as Administrator
+	function runAsAdmin {
+
+		# check if the script is running as admin
+		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+		$Test-AdminRights = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+		if (-not (Test-AdminRights)) {
+
+			Start-Process -FilePath "powershell.exe" `
+						  -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+						  -Verb RunAs
+			Pause
+			Exit 0
+
+		}
+	}
+
 	<# Select the Theme depending on daylight or chosen hours,
 	then schedules the next appropriate Temporary Task #>
 	function Main {
@@ -790,6 +809,9 @@ $scriptVersion = "1.0.25"
 # ============= RUNTIME  ==============
 
 	try {
+
+		# Force admin mode if required
+		if ($forceAsAdmin) {runAsAdmin}
 
 		# include config variables
 		if (-Not (Test-Path $ConfigPath)) {
