@@ -1,5 +1,5 @@
 # AUTO THEME
-Powershell script which automatically switches `.theme` files depending on the time of day.
+Powershell script which automatically switches Dark and Light themes and desktop backgrounds under Windows, depending on the time of day.
 
 ## Description
 This script automatically alternates between two  `.theme` files chosen by the user, either via scheduled task or when run directly. As a scheduled task, it finds sunrise or sunset times by retriving location, or it stays offline using the hours indicated by the user.
