@@ -40,6 +40,10 @@
 	$wallLightPath = "Path\to\Light\wallpapers"
 	$wallDarkPath = "Path\to\Dark\wallpapers"
 
+	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
+	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
+	$TrueLaunch = $false
+
 	
 # ============= Developer variables ==============
 
