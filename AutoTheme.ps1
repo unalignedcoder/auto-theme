@@ -15,7 +15,8 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.22"
+$scriptVersion = "1.0.25"
+
 
 # ============= Config file ==============
 
@@ -130,7 +131,17 @@ $scriptVersion = "1.0.22"
 
 		# Install the BurntToast module if not already installed
 		if (-not (Get-Module -Name BurntToast -ListAvailable)) {
-			Install-Module -Name BurntToast -Scope CurrentUser
+
+			try {
+
+				LogThis "Installing the BurnToast Notifications module" -verboseMessage $true
+				Install-Module -Name BurntToast -Scope CurrentUser -Force -AllowClobber -SkipPublisherCheck -Confirm:$false
+
+			} catch {
+
+				LogThis "Failed to install BurntToast module: $_" -verboseMessage $true
+				return
+			}
 		}
 
 		# for when the above is commented out or fails, we double-check.
@@ -150,7 +161,7 @@ $scriptVersion = "1.0.22"
 
 		} else {
 
-			LogThis "BurntToast module is not installed. Cannot display system notifications."  -verboseMessage $true
+			LogThis "BurntToast module is not installed. Cannot display system notifications."
 		}
 	}
 
@@ -307,17 +318,9 @@ $scriptVersion = "1.0.22"
 		param (
 			[string]$ThemePath
 			)
-			
-		#restart Theme service, solves issues with theme not being applied
-		if ($themeServiceProblem) {	
-			try {
-				LogThis "Restarting the Themes service..." -verboseMessage $true
-				Restart-Service -Name "Themes" -Force
-				LogThis "Themes service restarted successfully." -verboseMessage $true
-			} catch {
-				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
-			}
-		}
+		
+		#restart Theme service, may solve issues with theme not being fully applied
+		Restart-ThemeService
 		
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
@@ -359,7 +362,7 @@ $scriptVersion = "1.0.22"
 
 			# extra apps
 			if ($RestartProcexp) {Restart-ProcessExplorer}
-			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "light" }
+			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "light" }
 
 			# log it
 			LogThis "$themeLight activated"
@@ -378,7 +381,7 @@ $scriptVersion = "1.0.22"
 
 			# extra apps
 			if ($RestartProcexp) {Restart-ProcessExplorer}
-			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "dark" }
+			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
 
 			# log it
 			LogThis "$themeDark activated"
@@ -450,7 +453,7 @@ $scriptVersion = "1.0.22"
 	}
 
 	# Modify TrueLaunchBar default colors
-	function Update-TrueLaunchBar-colors {
+	function UpdateTrueLaunch {
 
 		param (
 			[string]$themeMode  # Expected values: "dark" or "light"
@@ -458,7 +461,7 @@ $scriptVersion = "1.0.22"
 
 		# Check if TrueLaunch modification is enabled
 		if (-Not $TrueLaunch) {
-			LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping..." -verboseMessage $true
+			LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping." -verboseMessage $true
 			return
 		}
 
@@ -468,7 +471,8 @@ $scriptVersion = "1.0.22"
 			return
 		}
 
-		LogThis "Modifying True Launch Bar settings for $themeMode theme..." -verboseMessage $true
+		LogThis "Modifying True Launch Bar settings for $themeMode theme." -verboseMessage $true
+		LogThis "Using $TrueLaunchiniFilePath." -verboseMessage $true
 
 		<# Define settings for dark and light themes
 		Study TLB Setup.ini for more customizations #>
@@ -516,7 +520,7 @@ $scriptVersion = "1.0.22"
 		# Save the updated content back to the INI file
 		Set-Content -Path $TrueLaunchiniFilePath -Value $updatedContent -Encoding UTF8
 
-		LogThis "True Launch Bar settings updated. Restarting Explorer..." -verboseMessage $true
+		LogThis "True Launch Bar settings updated. Restarting Explorer." -verboseMessage $true
 
 		# Restart Explorer
 		Restart-Explorer
@@ -524,34 +528,59 @@ $scriptVersion = "1.0.22"
 		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
-	# restart Sysinternals Process Explorer
+	# Restart the Themes Service
+	function Restart-ThemeService {
+
+		if ($themeServiceProblem && Test-AdminRights) {
+
+			try {
+
+				LogThis "Restarting the Themes service..." -verboseMessage $true
+
+				Restart-Service -Name "Themes" -Force
+
+				LogThis "Themes service restarted successfully." -verboseMessage $true
+
+			} catch {
+
+				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
+			}
+		}
+	}
+
+	# Restart Sysinternals Process Explorer
 	function Restart-ProcessExplorer {
 
-		# Check if procexp.exe or procexp64.exe is running
+		# Check if procexp.exe or procexp64.exe are running
 		$proc = Get-Process | Where-Object { $_.ProcessName -match "procexp(64)?" }
 
 		if ($proc) {
 
-			# Get the executable path of the running Process Explorer
-			$exePath = $proc.Path
-        
+			# Retrieve the executable path safely
+			$exePath = ($proc | Select-Object -First 1).Path
+
+			if (-not $exePath) {
+				LogThis "Error: Could not retrieve Process Explorer's path." -verboseMessage $true
+				return
+			}
+
 			LogThis "Restarting Process Explorer: $exePath" -verboseMessage $true
-        
+
 			# Stop Process Explorer
 			Stop-Process -Id $proc.Id -Force
 
 			Start-Sleep -Seconds 2  # Ensure it has fully closed
 
 			# Restart minimized
-			Start-Process -FilePath $exePath -ArgumentList "-t"
+			Start-Process -FilePath $exePath -ArgumentList "-t" -WindowStyle Minimized
+
 
 		} else {
-
 			LogThis "Process Explorer is not running. No restart needed." -verboseMessage $true
 		}
 	}
 
-	# Restart Windows Explorer if needed
+	# Restart Explorer if needed
 	function Restart-Explorer {
 
 		LogThis "Restarting Windows Explorer..." -verboseMessage $true
@@ -559,10 +588,40 @@ $scriptVersion = "1.0.22"
 		# Stop all explorer instances
 		Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
 
-		#Start-Sleep -Seconds 2  # Ensure it's fully closed
+		Start-Sleep -Seconds 3  # Ensure it's fully closed
+		
+		$explorer = Get-Process | Where-Object { $_.ProcessName -eq "explorer" } -ErrorAction SilentlyContinue
 
-		# Restart explorer without opening a file window
-		#Start-Process -FilePath "C:\Windows\explorer.exe" -NoNewWindow
+		#start if it hasn't already started
+		if (-Not ($explorer)) {Start-Process "explorer.exe" -ErrorAction SilentlyContinue}
+	}
+
+	# Function to check if the script is running as admin
+	function Test-AdminRights {
+
+		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+		return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+	}
+
+	# Run script as Administrator
+	function runAsAdmin {
+
+		# Skip elevation if running as SYSTEM user
+		if ($env:SYSTEMROOT -and $env:USERNAME -eq "SYSTEM") {
+			LogThis "Running as SYSTEM via Task Scheduler. Skipping elevation check." -verboseMessage $true
+			return
+		}
+
+		if (-Not (Test-AdminRights)) {
+
+			LogThis "Restarting script as admin." -verboseMessage $true
+
+			$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
+			Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -Verb RunAs -Wait
+
+			Exit 0  # Exit the current instance after launching admin version
+		}
 	}
 
 	<# Select the Theme depending on daylight or chosen hours,
@@ -646,7 +705,7 @@ $scriptVersion = "1.0.22"
 
 			# extra apps
 			if ($RestartProcexp) {Restart-ProcessExplorer}
-			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "light" }
+			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "light" }
 
 			# logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
@@ -681,7 +740,7 @@ $scriptVersion = "1.0.22"
 
 			# extra apps
 			if ($RestartProcexp) {Restart-ProcessExplorer}
-			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "dark" }
+			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
 
 			# logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
@@ -747,6 +806,12 @@ $scriptVersion = "1.0.22"
 		LogThis ""
 		LogThis "$timestamp === Script started (Version: $scriptVersion)"
 
+		# Force admin mode if required
+		if ($forceAsAdmin) {
+			LogThis	"We'll run as Administrator." -verboseMessage $true
+			runAsAdmin
+		}
+
 		# Check if the script was run recently
 		if($checkLastRun){LastTime}
 
@@ -758,6 +823,7 @@ $scriptVersion = "1.0.22"
 			# Toggle the theme and exit
 			LogThis "Toggling the Theme"
 			ToggleTheme
+			LogThis "All done."
 			exit
 
 		} else {
@@ -767,13 +833,13 @@ $scriptVersion = "1.0.22"
 
 			# Main function
 			Main
+			LogThis "All done."
+			LogThis ""
 
 		}
 
 		# Update last run time
 		UpdateTime
-		LogThis "All done."
-		LogThis ""
 
 	} catch {
 
