@@ -15,7 +15,8 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.22"
+$scriptVersion = "1.0.24"
+
 
 # ============= Config file ==============
 
@@ -130,7 +131,17 @@ $scriptVersion = "1.0.22"
 
 		# Install the BurntToast module if not already installed
 		if (-not (Get-Module -Name BurntToast -ListAvailable)) {
-			Install-Module -Name BurntToast -Scope CurrentUser
+
+			try {
+
+				LogThis "Installing the BurnToast Notifications module" -verboseMessage $true
+				Install-Module -Name BurntToast -Scope CurrentUser -Force -AllowClobber -SkipPublisherCheck -Confirm:$false
+
+			} catch {
+
+				LogThis "Failed to install BurntToast module: $_" -verboseMessage $true
+				return
+			}
 		}
 
 		# for when the above is commented out or fails, we double-check.
@@ -150,7 +161,7 @@ $scriptVersion = "1.0.22"
 
 		} else {
 
-			LogThis "BurntToast module is not installed. Cannot display system notifications."  -verboseMessage $true
+			LogThis "BurntToast module is not installed. Cannot display system notifications."
 		}
 	}
 
@@ -307,17 +318,9 @@ $scriptVersion = "1.0.22"
 		param (
 			[string]$ThemePath
 			)
-			
-		#restart Theme service, solves issues with theme not being applied
-		if ($themeServiceProblem) {	
-			try {
-				LogThis "Restarting the Themes service..." -verboseMessage $true
-				Restart-Service -Name "Themes" -Force
-				LogThis "Themes service restarted successfully." -verboseMessage $true
-			} catch {
-				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
-			}
-		}
+		
+		#restart Theme service, may solve issues with theme not being fully applied
+		restartThemesService
 		
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
@@ -458,7 +461,7 @@ $scriptVersion = "1.0.22"
 
 		# Check if TrueLaunch modification is enabled
 		if (-Not $TrueLaunch) {
-			LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping..." -verboseMessage $true
+			LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping." -verboseMessage $true
 			return
 		}
 
@@ -468,7 +471,8 @@ $scriptVersion = "1.0.22"
 			return
 		}
 
-		LogThis "Modifying True Launch Bar settings for $themeMode theme..." -verboseMessage $true
+		LogThis "Modifying True Launch Bar settings for $themeMode theme." -verboseMessage $true
+		LogThis "Using $TrueLaunchiniFilePath." -verboseMessage $true
 
 		<# Define settings for dark and light themes
 		Study TLB Setup.ini for more customizations #>
@@ -516,7 +520,7 @@ $scriptVersion = "1.0.22"
 		# Save the updated content back to the INI file
 		Set-Content -Path $TrueLaunchiniFilePath -Value $updatedContent -Encoding UTF8
 
-		LogThis "True Launch Bar settings updated. Restarting Explorer..." -verboseMessage $true
+		LogThis "True Launch Bar settings updated. Restarting Explorer." -verboseMessage $true
 
 		# Restart Explorer
 		Restart-Explorer
@@ -524,7 +528,27 @@ $scriptVersion = "1.0.22"
 		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
-	# restart Sysinternals Process Explorer
+	# Restart the Themes Service
+	function restartThemesService {
+
+		if ($themeServiceProblem) {
+
+			try {
+
+				LogThis "Restarting the Themes service..." -verboseMessage $true
+
+				Restart-Service -Name "Themes" -Force
+
+				LogThis "Themes service restarted successfully." -verboseMessage $true
+
+			} catch {
+
+				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
+			}
+		}
+	}
+
+	# Restart Sysinternals Process Explorer
 	function Restart-ProcessExplorer {
 
 		# Check if procexp.exe or procexp64.exe is running
@@ -551,7 +575,7 @@ $scriptVersion = "1.0.22"
 		}
 	}
 
-	# Restart Windows Explorer if needed
+	# Restart Explorer if needed
 	function Restart-Explorer {
 
 		LogThis "Restarting Windows Explorer..." -verboseMessage $true
@@ -563,6 +587,25 @@ $scriptVersion = "1.0.22"
 
 		# Restart explorer without opening a file window
 		#Start-Process -FilePath "C:\Windows\explorer.exe" -NoNewWindow
+	}
+
+	# Run script as Administrator
+	function runAsAdmin {
+
+		# check if the script is running as admin
+		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+		$Test-AdminRights = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+		if (-not (Test-AdminRights)) {
+
+			Start-Process -FilePath "powershell.exe" `
+						  -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+						  -Verb RunAs
+			Pause
+			Exit 0
+
+		}
 	}
 
 	<# Select the Theme depending on daylight or chosen hours,
@@ -732,6 +775,9 @@ $scriptVersion = "1.0.22"
 
 	try {
 
+		# Force admin mode if required
+		if ($forceAsAdmin) {runAsAdmin}
+
 		# include config variables
 		if (-Not (Test-Path $ConfigPath)) {
 			Write-Error "Configuration file not found: $ConfigPath"
@@ -758,6 +804,7 @@ $scriptVersion = "1.0.22"
 			# Toggle the theme and exit
 			LogThis "Toggling the Theme"
 			ToggleTheme
+			LogThis "All done."
 			exit
 
 		} else {
@@ -767,13 +814,13 @@ $scriptVersion = "1.0.22"
 
 			# Main function
 			Main
+			LogThis "All done."
+			LogThis ""
 
 		}
 
 		# Update last run time
 		UpdateTime
-		LogThis "All done."
-		LogThis ""
 
 	} catch {
 

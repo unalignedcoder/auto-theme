@@ -39,12 +39,13 @@
 	(only needed if $randomFirst = true) #>
 	$wallLightPath = "Path\to\Light\wallpapers"
 	$wallDarkPath = "Path\to\Dark\wallpapers"
-	
+
 # ============= Extra apps variables =============
 
 	<# Sysinternals' Process Explorer doesn't automatically change theme when
-	the system theme is changed. Use this variable if you want it to be restarted. #>
+	the system theme is changed. Use this variable if you want to restart it. #>
 	$RestartProcexp = $false
+
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
 	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
@@ -58,8 +59,10 @@
 	$verbose = $false
 	$interval = "10" 
 	$checkLastRun = $true
-	$themeServiceProblem = $true
+	$themeServiceProblem = $true # may require script to be run as admin
 	$maxLogEntries = "10"
+
+	$forceAsAdmin = $true
 	
 	$appLogo = Join-Path $PSScriptRoot "autotheme.png"	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
