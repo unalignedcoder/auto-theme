@@ -15,7 +15,7 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.23"
+$scriptVersion = "1.0.22"
 
 # ============= Config file ==============
 
@@ -77,7 +77,7 @@ $scriptVersion = "1.0.23"
 	function TrimOldLog {
 		param (
 			[string]$logFilePath,    # Path to the log file
-			[int]$maxSessions = 30  # Maximum number of log sessions to keep
+			[int]$maxSessions = 10  # Maximum number of log sessions to keep
 		)
 
 		if (-Not $trimLog) {
@@ -520,9 +520,11 @@ $scriptVersion = "1.0.23"
 
 		# Restart Explorer
 		Restart-Explorer
+
+		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
-	# Process Explorer doesn't automatically switch theme unless restarted
+	# restart Sysinternals Process Explorer
 	function Restart-ProcessExplorer {
 
 		# Check if procexp.exe or procexp64.exe is running
@@ -549,7 +551,7 @@ $scriptVersion = "1.0.23"
 		}
 	}
 
-	# Restart Explorer if needed
+	# Restart Windows Explorer if needed
 	function Restart-Explorer {
 
 		LogThis "Restarting Windows Explorer..." -verboseMessage $true
@@ -561,8 +563,6 @@ $scriptVersion = "1.0.23"
 
 		# Restart explorer without opening a file window
 		#Start-Process -FilePath "C:\Windows\explorer.exe" -NoNewWindow
-
-		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
 	<# Select the Theme depending on daylight or chosen hours,
@@ -773,6 +773,7 @@ $scriptVersion = "1.0.23"
 		# Update last run time
 		UpdateTime
 		LogThis "All done."
+		LogThis ""
 
 	} catch {
 
