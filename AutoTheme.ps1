@@ -1,21 +1,21 @@
 <#
 .SYNOPSIS
-Changes the active Windows theme based on a predefined schedule.
+	Changes the active Windows theme based on a predefined schedule.
 
 .DESCRIPTION
-This Powershell script automatically switches the Windows theme based on Sunrise and Sunset, or hours set by the user.
-Rather than using registry/system settings, it works by selecting given .theme files. 
-This allows for a much higher degree of customization and compatibility.
-The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
-It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
-Alternatively, it can use hours provided by the user, thus staying offline.
-The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
-If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between themes.
-IMPORTANT: Edit config.ps1 to configure this script. Run Setup.ps1 to create the Scheduled Task.
+	This Powershell script automatically switches the Windows theme based on Sunrise and Sunset, or hours set by the user.
+	Rather than using registry/system settings, it works by selecting given .theme files. 
+	This allows for a much higher degree of customization and compatibility.
+	The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
+	It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
+	Alternatively, it can use hours provided by the user, thus staying offline.
+	The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
+	If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between themes.
+	IMPORTANT: Edit config.ps1 to configure this script. Run Setup.ps1 to create the Scheduled Task.
 #>
 
 # Script version
-$scriptVersion = "1.0.20"
+$scriptVersion = "1.0.23"
 
 # ============= Config file ==============
 
@@ -63,6 +63,7 @@ $scriptVersion = "1.0.20"
 			if (IsRunningFromTerminal) {
 
 				Write-Output "$message" # Output to console
+				# Add-Content -Path $logFile -Value "$message"  # Log to file
 
 			} else {
 
@@ -352,8 +353,15 @@ $scriptVersion = "1.0.20"
 			}
 
 			LogThis "Selected $LightPath"  -verboseMessage $true
+
+			# set Light theme
 			StartTheme $LightPath
+
+			# extra apps
+			if ($RestartProcexp) {Restart-ProcessExplorer}
 			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "light" }
+
+			# log it
 			LogThis "$themeLight activated"
 			Show-BurntToastNotification -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
 
@@ -364,10 +372,18 @@ $scriptVersion = "1.0.20"
 			}
 
 			LogThis "Selected $DarkPath"  -verboseMessage $true
+
+			# set Dark theme
 			StartTheme $DarkPath
+
+			# extra apps
+			if ($RestartProcexp) {Restart-ProcessExplorer}
 			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "dark" }
+
+			# log it
 			LogThis "$themeDark activated"
 			Show-BurntToastNotification -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
+
 		}
 	}
 
@@ -435,80 +451,119 @@ $scriptVersion = "1.0.20"
 
 	# Modify TrueLaunchBar default colors
 	function Update-TrueLaunchBar-colors {
-    param (
-        [string]$themeMode  # Expected values: "dark" or "light"
-    )
 
-    # Check if TrueLaunch modification is enabled
-    if (-Not $TrueLaunch) {
-        LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping..." -verboseMessage $true
-        return
-    }
+		param (
+			[string]$themeMode  # Expected values: "dark" or "light"
+		)
 
-    # Define the path to the True Launch Bar settings file
-    $userProfile = [System.Environment]::GetFolderPath('UserProfile')
-    $iniFilePath = "$userProfile\AppData\Roaming\Tordex\True Launch Bar\settings\Setup.ini"
+		# Check if TrueLaunch modification is enabled
+		if (-Not $TrueLaunch) {
+			LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping..." -verboseMessage $true
+			return
+		}
 
-    # Validate if the file exists
-    if (-Not (Test-Path $iniFilePath)) {
-        LogThis "True Launch Bar settings file not found: $iniFilePath" -verboseMessage $true
-        return
-    }
+		# Validate if the file exists
+		if (-Not (Test-Path $TrueLaunchiniFilePath)) {
+			LogThis "True Launch Bar settings file not found: $TrueLaunchiniFilePath" -verboseMessage $true
+			return
+		}
 
-    LogThis "Modifying True Launch Bar settings for $themeMode theme..." -verboseMessage $true
+		LogThis "Modifying True Launch Bar settings for $themeMode theme..." -verboseMessage $true
 
-    # Define settings for dark and light themes
-    $settingsDark = @{
-        "MenuActiveColor2"      = "10053120"
-        "MenuActiveColor"       = "10053120"
-        "MenuActiveTextColor"   = "16777215"
-        "MenuBackgroundColor"   = "2960685"
-        "menuSeparatorColor1"   = "0"
-        "menuSeparatorColor2"   = "6908265"
-        "MenuTextColor"         = "16777215"
-    }
+		<# Define settings for dark and light themes
+		Study TLB Setup.ini for more customizations #>
+		$settingsDark = @{
+			"MenuActiveColor2"      = "10053120"
+			"MenuActiveColor"       = "10053120"
+			"MenuActiveTextColor"   = "16777215"
+			"MenuBackgroundColor"   = "2960685"
+			"menuSeparatorColor1"   = "0"
+			"menuSeparatorColor2"   = "6908265"
+			"MenuTextColor"         = "16777215"
+		}
 
-    $settingsLight = @{
-        "MenuActiveColor2"      = "-1"
-        "MenuActiveColor"       = "-1"
-        "MenuActiveTextColor"   = "-1"
-        "MenuBackgroundColor"   = "-1"
-        "menuSeparatorColor1"   = "-1"
-        "menuSeparatorColor2"   = "-1"
-        "MenuTextColor"         = "-1"
-    }
+		$settingsLight = @{
+			"MenuActiveColor2"      = "-1"
+			"MenuActiveColor"       = "-1"
+			"MenuActiveTextColor"   = "-1"
+			"MenuBackgroundColor"   = "-1"
+			"menuSeparatorColor1"   = "-1"
+			"menuSeparatorColor2"   = "-1"
+			"MenuTextColor"         = "-1"
+		}
 
-    # Select settings based on the theme mode
-    $settingsToApply = if ($themeMode -eq "dark") { $settingsDark } else { $settingsLight }
+		# Select settings based on the theme mode
+		$settingsToApply = if ($themeMode -eq "dark") { $settingsDark } else { $settingsLight }
 
-    # Read existing INI file content
-    $iniContent = Get-Content -Path $iniFilePath -Raw
-    $updatedContent = $iniContent
+		# Read existing INI file content
+		$iniContent = Get-Content -Path $TrueLaunchiniFilePath -Raw
+		$updatedContent = $iniContent
 
-    # Modify settings under [settings] section
-    foreach ($key in $settingsToApply.Keys) {
-        $regex = "(?<=\b$key=)[\-\d]+"
-        if ($updatedContent -match "\b$key=") {
-            # Update existing key
-            $updatedContent = $updatedContent -replace $regex, $settingsToApply[$key]
-            LogThis "Updated $key to $($settingsToApply[$key])" -verboseMessage $true
-        } else {
-            # If key is missing, append it (shouldn't happen, but just in case)
-            $updatedContent = $updatedContent -replace "\[settings\]", "[settings]`r`n$key=$($settingsToApply[$key])"
-            LogThis "Added missing key: $key=$($settingsToApply[$key])" -verboseMessage $true
-        }
-    }
+		# Modify settings under [settings] section
+		foreach ($key in $settingsToApply.Keys) {
+			$regex = "(?<=\b$key=)[\-\d]+"
+			if ($updatedContent -match "\b$key=") {
+				# Update existing key
+				$updatedContent = $updatedContent -replace $regex, $settingsToApply[$key]
+				LogThis "Updated $key to $($settingsToApply[$key])" -verboseMessage $true
+			} else {
+				# If key is missing, append it (shouldn't happen, but just in case)
+				$updatedContent = $updatedContent -replace "\[settings\]", "[settings]`r`n$key=$($settingsToApply[$key])"
+				LogThis "Added missing key: $key=$($settingsToApply[$key])" -verboseMessage $true
+			}
+		}
 
-    # Save the updated content back to the INI file
-    Set-Content -Path $iniFilePath -Value $updatedContent -Encoding UTF8
+		# Save the updated content back to the INI file
+		Set-Content -Path $TrueLaunchiniFilePath -Value $updatedContent -Encoding UTF8
 
-    LogThis "True Launch Bar settings updated. Restarting Explorer..." -verboseMessage $true
+		LogThis "True Launch Bar settings updated. Restarting Explorer..." -verboseMessage $true
 
-    # Restart Explorer
-    Stop-Process -Name explorer -Force
-    Start-Process explorer
+		# Restart Explorer
+		Restart-Explorer
+	}
 
-}
+	# Process Explorer doesn't automatically switch theme unless restarted
+	function Restart-ProcessExplorer {
+
+		# Check if procexp.exe or procexp64.exe is running
+		$proc = Get-Process | Where-Object { $_.ProcessName -match "procexp(64)?" }
+
+		if ($proc) {
+
+			# Get the executable path of the running Process Explorer
+			$exePath = $proc.Path
+        
+			LogThis "Restarting Process Explorer: $exePath" -verboseMessage $true
+        
+			# Stop Process Explorer
+			Stop-Process -Id $proc.Id -Force
+
+			Start-Sleep -Seconds 2  # Ensure it has fully closed
+
+			# Restart minimized
+			Start-Process -FilePath $exePath -ArgumentList "-t"
+
+		} else {
+
+			LogThis "Process Explorer is not running. No restart needed." -verboseMessage $true
+		}
+	}
+
+	# Restart Explorer if needed
+	function Restart-Explorer {
+
+		LogThis "Restarting Windows Explorer..." -verboseMessage $true
+
+		# Stop all explorer instances
+		Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+
+		#Start-Sleep -Seconds 2  # Ensure it's fully closed
+
+		# Restart explorer without opening a file window
+		#Start-Process -FilePath "C:\Windows\explorer.exe" -NoNewWindow
+
+		LogThis "Windows Explorer restarted." -verboseMessage $true
+	}
 
 	<# Select the Theme depending on daylight or chosen hours,
 	then schedules the next appropriate Temporary Task #>
@@ -588,7 +643,12 @@ $scriptVersion = "1.0.20"
 			# set Light theme
 			LogThis "Setting the theme  $LightPath"  -verboseMessage $true
 			StartTheme -ThemePath $LightPath
+
+			# extra apps
+			if ($RestartProcexp) {Restart-ProcessExplorer}
 			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "light" }
+
+			# logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
 			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 
@@ -619,6 +679,11 @@ $scriptVersion = "1.0.20"
 			LogThis "Setting the theme  $DarkPath" -verboseMessage $true
 			StartTheme -ThemePath $DarkPath
 
+			# extra apps
+			if ($RestartProcexp) {Restart-ProcessExplorer}
+			if ($TrueLaunch) {Update-TrueLaunchBar-colors -themeMode "dark" }
+
+			# logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
 			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 
@@ -675,10 +740,11 @@ $scriptVersion = "1.0.20"
 		. $ConfigPath
 		
 		# Trim old log sessions
-		TrimOldLog -logFilePath $logFile -maxSessions $maxLogEntries
+		if (-Not (IsRunningFromTerminal)) {TrimOldLog -logFilePath $logFile -maxSessions $maxLogEntries}
 		
 		# Start logging
 		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+		LogThis ""
 		LogThis "$timestamp === Script started (Version: $scriptVersion)"
 
 		# Check if the script was run recently

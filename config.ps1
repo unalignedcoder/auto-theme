@@ -1,5 +1,5 @@
 
-# ========= User variables == CUSTOMIZE THIS! ===========
+# ============= User variables =============
 
 	# Name of theme files
 	$themeLight = "Name-of-Light.theme"
@@ -40,20 +40,26 @@
 	$wallLightPath = "Path\to\Light\wallpapers"
 	$wallDarkPath = "Path\to\Dark\wallpapers"
 
+# ============= Extra apps variables =============
+
+	<# Sysinternals' Process Explorer doesn't automatically change theme when
+	the system theme is changed. Use this variable if you want to restart it. #>
+	$RestartProcexp = $false
+
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
 	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
 	$TrueLaunch = $false
-
+	$TrueLaunchiniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\Setup.ini"
 	
 # ============= Developer variables ==============
 
-	$log = false
+	$log = $true
 	$trimLog = $true
 	$verbose = $false
 	$interval = "10" 
 	$checkLastRun = $true
 	$themeServiceProblem = $true
-	$maxLogEntries = 30
+	$maxLogEntries = "10""
 	
 	$appLogo = Join-Path $PSScriptRoot "autotheme.png"	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
