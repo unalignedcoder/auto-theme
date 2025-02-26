@@ -15,7 +15,7 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.26"
+$scriptVersion = "1.0.27"
 
 
 # ============= Config file ==============
@@ -35,8 +35,11 @@ $scriptVersion = "1.0.26"
 
 		# Check if the parent process is 'svchost.exe' and contains 'Schedule' in the command line
 		if ($parent.Name -eq "svchost.exe" -or $parent.CommandLine -like "*Schedule*") {
+
 			return $false
+
 		} else {
+
 			return $true
 		}
 	}
@@ -48,30 +51,37 @@ $scriptVersion = "1.0.26"
 			[bool]$verboseMessage = $false   # Default to false if not specified
 		)
 
-		# Only proceed if in debug mode
-		if ($log) {
+		try {
 
-			<# Check for verbosity:
-			If the message is verbose, but verbose is false, end the Function
-			If the message is verbose, but verbose is true, continue
-			If the message is not verbose, continue #>
-			if ($verboseMessage -and -not $verbose) {
+			# Only proceed if in debug mode
+			if ($log) {
 
-				return  # Skip logging if message is verbose and $verbose is set to false
+				<# Check for verbosity:
+				If the message is verbose, but verbose is false, end the Function
+				If the message is verbose, but verbose is true, continue
+				If the message is not verbose, continue #>
+				if ($verboseMessage -and -not $verbose) {
+
+					return  # Skip logging if message is verbose and $verbose is set to false
+				}
+
+				# Display log output depending on session type
+				if (IsRunningFromTerminal) {
+
+					Write-Output "$message" # Output to console
+					# Add-Content -Path $logFile -Value "$message"  # Log to file
+
+				} else {
+
+					Add-Content -Path $logFile -Value "$message"  # Log to file
+
+				}
 			}
 
-			# Display log output depending on session type
-			if (IsRunningFromTerminal) {
+		} catch {
 
-				Write-Output "$message" # Output to console
-				# Add-Content -Path $logFile -Value "$message"  # Log to file
-
-			} else {
-
-				Add-Content -Path $logFile -Value "$message"  # Log to file
-
-			}
-		}
+			Write-Output "Error in LogThis: $_"
+		}		
 	}
 	
 	# Trim old log entries
@@ -81,7 +91,7 @@ $scriptVersion = "1.0.26"
 			[int]$maxSessions = 10  # Maximum number of log sessions to keep
 		)
 
-		if (-Not $trimLog) {
+		if (-Not ($trimLog)) {
 			return
 		}
 
@@ -123,7 +133,7 @@ $scriptVersion = "1.0.26"
 	}
 
 	# Handle BurntToast Notifications
-	function Show-BurntToastNotification {
+	function ShowBurntToast {
 		param(
 			[string]$Text,
 			[string]$AppLogo
@@ -152,7 +162,7 @@ $scriptVersion = "1.0.26"
 				LogThis "Creating BurnToast notification"  -verboseMessage $true
 				New-BurntToastNotification -Text $Text -AppLogo $AppLogo
 
-				LogThis "Displayed BurntToast notification with text: $Text and logo: $logoFullPath"  -verboseMessage $true
+				LogThis "Displayed BurntToast notification with text: $Text"  -verboseMessage $true
 
 			} catch {
 
@@ -319,9 +329,6 @@ $scriptVersion = "1.0.26"
 			[string]$ThemePath
 			)
 		
-		#restart Theme service, may solve issues with theme not being fully applied
-		Restart-ThemeService
-		
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
 
@@ -361,12 +368,12 @@ $scriptVersion = "1.0.26"
 			StartTheme $LightPath
 
 			# extra apps
-			if ($RestartProcexp) {Restart-ProcessExplorer}
+			if ($RestartProcexp) {RestartProcessExplorer}
 			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "light" }
 
 			# log it
 			LogThis "$themeLight activated"
-			Show-BurntToastNotification -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
+			ShowBurntToast -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
 
 		}else {
 
@@ -380,12 +387,12 @@ $scriptVersion = "1.0.26"
 			StartTheme $DarkPath
 
 			# extra apps
-			if ($RestartProcexp) {Restart-ProcessExplorer}
+			if ($RestartProcexp) {RestartProcessExplorer}
 			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
 
 			# log it
 			LogThis "$themeDark activated"
-			Show-BurntToastNotification -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
+			ShowBurntToast -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
 
 		}
 	}
@@ -419,7 +426,9 @@ $scriptVersion = "1.0.26"
 
 		# If any exist, rename them back to their original names
 		if ($existingRenamedWallpapers.Count -gt 0) {
+
 			foreach ($wallpaper in $existingRenamedWallpapers) {
+
 				$originalName = $wallpaper.Name -replace '^_0_AutoTheme_', ''
 				$originalNameFull = Join-Path $wallpaperDirectory $originalName
 				
@@ -505,12 +514,17 @@ $scriptVersion = "1.0.26"
 
 		# Modify settings under [settings] section
 		foreach ($key in $settingsToApply.Keys) {
+
 			$regex = "(?<=\b$key=)[\-\d]+"
+
 			if ($updatedContent -match "\b$key=") {
+
 				# Update existing key
 				$updatedContent = $updatedContent -replace $regex, $settingsToApply[$key]
 				LogThis "Updated $key to $($settingsToApply[$key])" -verboseMessage $true
+
 			} else {
+
 				# If key is missing, append it (shouldn't happen, but just in case)
 				$updatedContent = $updatedContent -replace "\[settings\]", "[settings]`r`n$key=$($settingsToApply[$key])"
 				LogThis "Added missing key: $key=$($settingsToApply[$key])" -verboseMessage $true
@@ -523,21 +537,21 @@ $scriptVersion = "1.0.26"
 		LogThis "True Launch Bar settings updated. Restarting Explorer." -verboseMessage $true
 
 		# Restart Explorer
-		Restart-Explorer
+		RestartExplorer
 
 		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
 	# Restart the Themes Service
-	function Restart-ThemeService {
+	function RestartThemeService {
 
-		if ($themeServiceProblem && Test-AdminRights) {
+		if ($themeServiceProblem && TestAdminRights) {
 
 			try {
 
-				LogThis "Restarting the Themes service..." -verboseMessage $true
+				LogThis "Restarting the Themes service." -verboseMessage $true
 
-				Restart-Service -Name "Themes" -Force
+				Restart-Service -Name "Themes" -Force -ErrorAction SilentlyContinue
 
 				LogThis "Themes service restarted successfully." -verboseMessage $true
 
@@ -549,7 +563,7 @@ $scriptVersion = "1.0.26"
 	}
 
 	# Restart Sysinternals Process Explorer
-	function Restart-ProcessExplorer {
+	function RestartProcessExplorer {
 
 		# Check if procexp.exe or procexp64.exe are running
 		$proc = Get-Process | Where-Object { $_.ProcessName -match "procexp(64)?" }
@@ -581,7 +595,7 @@ $scriptVersion = "1.0.26"
 	}
 
 	# Restart Explorer if needed
-	function Restart-Explorer {
+	function RestartExplorer {
 
 		LogThis "Restarting Windows Explorer..." -verboseMessage $true
 
@@ -597,7 +611,7 @@ $scriptVersion = "1.0.26"
 	}
 
 	# Function to check if the script is running as admin
-	function Test-AdminRights {
+	function TestAdminRights {
 
 		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
 		$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
@@ -605,7 +619,7 @@ $scriptVersion = "1.0.26"
 	}
 
 	# Run script as Administrator
-	function runAsAdmin {
+	function RunAsAdmin {
 
 		# Skip elevation if running as SYSTEM user
 		if ($env:SYSTEMROOT -and $env:USERNAME -eq "SYSTEM") {
@@ -613,34 +627,59 @@ $scriptVersion = "1.0.26"
 			return
 		}
 
-		if (-Not (Test-AdminRights)) {
+		# Relaunch script as admin if not already running as admin
+		if (-Not (TestAdminRights)) {
 
-			LogThis "Restarting script as admin." -verboseMessage $true
-
-			$arguments = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`""
-			Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -Verb RunAs -Wait
-
-			Exit 0  # Exit the current instance after launching admin version
-		}
-	}
-
-	# Run script as Administrator
-	function runAsAdmin {
-
-		# check if the script is running as admin
-		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-		$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
-		$Test-AdminRights = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-		if (-not (Test-AdminRights)) {
-
+			Write-Host "This script requires administrative privileges. Requesting elevation..." -ForegroundColor Yellow
 			Start-Process -FilePath "powershell.exe" `
 						  -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
 						  -Verb RunAs
-			Pause
 			Exit 0
-
 		}
+	}
+
+	<# Create the scheduled task for next daylight events
+	Such tasks are 'temporary' because they are overwritten by the main task #>
+	function CreateTemporaryTask {
+		param (
+			[DateTime]$NextTriggerTime,
+			[String]$Name
+		)
+		
+		# Schedule next run
+		LogThis "Setting temporary Scheduled Task"
+		$arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
+		$fullCommand = "PowerShell.exe $arguments"
+		LogThis "Full Command: $fullCommand"  -verboseMessage $true
+
+		LogThis "Creating scheduled task action..." -verboseMessage $true
+		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
+
+		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
+		$userSid = $env:USERNAME
+		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
+		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8
+
+		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
+		LogThis "Scheduled task action created."  -verboseMessage $true
+
+		# Unregister the old task if it exists
+		if (TaskExists $Name) {
+
+			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
+			LogThis "Unregistered existing task: $Name"  -verboseMessage $true
+		}
+
+		# Register the new task
+		try {
+
+			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
+			LogThis "Registered new task: $Name"  -verboseMessage $true
+
+		} catch {
+
+			LogThis "Error registering task: $_"
+		}	
 	}
 
 	<# Select the Theme depending on daylight or chosen hours,
@@ -705,13 +744,18 @@ $scriptVersion = "1.0.26"
 		# Afer Sunrise and Before Sunset
 		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
 
-			if ($CurrentTheme -match $themeLight)  {
-
-				LogThis "The Mode is already set. No action needed."
-				exit
-			}			
+			# assign name for next temporary task
+			$Name = "Sunset theme"
 
 			$NextTriggerTime = $Sunset
+
+			# if the Theme is already set, create temporary tasks and exit
+			if ($CurrentTheme -match $themeLight)  {
+
+				LogThis "The Mode is already set. No the switching needed."
+				CreateTemporaryTask $NextTriggerTime, $Name
+				exit
+			}			
 
 			If (DoWeShuffle($LightPath)) {
 
@@ -723,22 +767,14 @@ $scriptVersion = "1.0.26"
 			StartTheme -ThemePath $LightPath
 
 			# extra apps
-			if ($RestartProcexp) {Restart-ProcessExplorer}
+			if ($RestartProcexp) {RestartProcessExplorer}
 			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "light" }
 
 			# logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
-			Show-BurntToastNotification -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
-
-			# assign name for next temporary task
-			$Name = "Sunset theme"
+			ShowBurntToast -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 
 		} else {
-
-			if ($CurrentTheme -match $themeDark)  {
-				LogThis "The Mode is already set. No action needed."
-				exit
-			}			
 
 			if ($Now -ge $Sunset) {
 				$NextTriggerTime = $TomorrowSunrise
@@ -747,6 +783,17 @@ $scriptVersion = "1.0.26"
 
 				$NextTriggerTime = $Sunrise
 			}
+
+			# assign name for next temporary task
+			$Name = "Sunrise theme"
+
+			# if the Theme is already set, create temporary tasks and exit
+			if ($CurrentTheme -match $themeDark)  {
+
+				LogThis "The Mode is already set. No theme switching needed."
+				CreateTemporaryTask $NextTriggerTime, $Name
+				exit
+			}	
 
 			If (DoWeShuffle($DarkPath)) {
 
@@ -758,60 +805,21 @@ $scriptVersion = "1.0.26"
 			StartTheme -ThemePath $DarkPath
 
 			# extra apps
-			if ($RestartProcexp) {Restart-ProcessExplorer}
+			if ($RestartProcexp) {RestartProcessExplorer}
 			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
 
 			# logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
-			Show-BurntToastNotification -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
-
-			# assign name for next temporary task
-			$Name = "Sunrise theme"
-
+			ShowBurntToast -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 		}	
-
-		# Schedule next run
-		LogThis "Setting temporary Scheduled Task"
-		$arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
-		$fullCommand = "PowerShell.exe $arguments"
-		LogThis "Full Command: $fullCommand"  -verboseMessage $true
-
-		LogThis "Creating scheduled task action..." -verboseMessage $true
-		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
-
-		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-		$userSid = $env:USERNAME
-		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
-		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable
-
-		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
-		LogThis "Scheduled task action created."  -verboseMessage $true
-
-		# Unregister the old task if it exists
-		if (TaskExists $Name) {
-
-			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
-			LogThis "Unregistered existing task: $Name"  -verboseMessage $true
-		}
-
-		# Register the new task
-		try {
-
-			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
-			LogThis "Registered new task: $Name"  -verboseMessage $true
-
-		} catch {
-
-			LogThis "Error registering task: $_"
-		}
+	
+		# Create the next temporary task
+		CreateTemporaryTask $NextTriggerTime, $Name
 	}
 
 # ============= RUNTIME  ==============
 
 	try {
-
-		# Force admin mode if required
-		if ($forceAsAdmin) {runAsAdmin}
 
 		# include config variables
 		if (-Not (Test-Path $ConfigPath)) {
@@ -821,47 +829,50 @@ $scriptVersion = "1.0.26"
 		. $ConfigPath
 		
 		# Trim old log sessions
-		if (-Not (IsRunningFromTerminal)) {TrimOldLog -logFilePath $logFile -maxSessions $maxLogEntries}
+		if ($trimLog -and -Not (IsRunningFromTerminal)) {TrimOldLog -logFilePath $logFile -maxSessions $maxLogEntries}
 		
 		# Start logging
 		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 		LogThis ""
 		LogThis "$timestamp === Script started (Version: $scriptVersion)"
 
-		# Force admin mode if required
+		# Optionally force admin mode
 		if ($forceAsAdmin) {
-			LogThis	"We'll run as Administrator." -verboseMessage $true
-			runAsAdmin
+			LogThis	"Running as Administrator." -verboseMessage $true
+			RunAsAdmin
 		}
+						
+		# Optionally restart Theme service, may solve issues with theme not being fully applied
+		if ($themeServiceProblem){RestartThemeService}
 
-		# Check if the script was run recently
+		# Optionally check if the script was run recently
 		if($checkLastRun){LastTime}
 
-		# Running from terminal or from Scheduled Task?
+		# Update last run time
+		UpdateTime			
+
+		<# Here we call the functions to switch theme files,
+		depending on whether running from terminal or from Scheduled Task. #>
 		if (IsRunningFromTerminal) {
 
 			LogThis "Script is running from Terminal." -verboseMessage $true
+			LogThis "Toggling Theme regardless of daylight"
 
-			# Toggle the theme and exit
-			LogThis "Toggling the Theme"
 			ToggleTheme
+
 			LogThis "All done."
-			exit
+			LogThis ""
 
 		} else {
 
 			LogThis "Script is running from Task Scheduler." -verboseMessage $true
-			LogThis "Selecting Theme based on daylight"
+			LogThis "Selecting and scheduling Theme based on daylight"
 
-			# Main function
 			Main
+
 			LogThis "All done."
 			LogThis ""
-
 		}
-
-		# Update last run time
-		UpdateTime
 
 	} catch {
 
