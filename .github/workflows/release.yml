@@ -1,0 +1,59 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers the workflow on version tags like v1.0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Extract version number
+      id: extract_version
+      run: |
+        VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' AutoTheme.ps1)
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Zip files
+      run: |
+        mkdir release
+        cp AutoTheme.ps1 release/
+        cp config.ps1 release/
+        cp setup.ps1 release/
+        cp autotheme.png release/
+        cp LICENSE release/
+        cp README.md release/
+        zip -r "release-$VERSION.zip" release/
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          Release notes for ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release-$VERSION.zip
+        asset_name: release-$VERSION.zip
+        asset_content_type: application/zip
