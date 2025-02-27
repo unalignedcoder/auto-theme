@@ -22,11 +22,12 @@
 .RELEASE NOTES
 	- Improvements to versioning automation
 	- Improvements to readability and logging
+	- Beautification of code
 
 #>
 
 # Script version
-$scriptVersion = "1.0.45"
+$scriptVersion = "1.0.46"
 
 # ============= Config file ==============
 

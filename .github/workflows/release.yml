@@ -14,7 +14,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Extract release notes from script
       run: |
@@ -24,19 +24,13 @@ jobs:
 
     - name: Zip files
       run: |
-        TAG_NAME=${GITHUB_REF#refs/tags/}
         mkdir release
-        cp AutoTheme.ps1 release/
-        cp Config.ps1 release/
-        cp Setup.ps1 release/
-        cp AutoTheme.png release/
-        cp LICENSE release/
-        cp README.md release/
-        zip -r "release-$TAG_NAME.zip" release/
+        cp AutoTheme.ps1 Config.ps1 Setup.ps1 AutoTheme.png LICENSE README.md release/
+        zip -r release-${{ github.ref_name }}.zip release/
 
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: actions/create-release@v2  # Updated from v1 to v2
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
       with:
@@ -52,6 +46,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-$TAG_NAME.zip
-        asset_name: release-$TAG_NAME.zip
+        asset_path: ./release-${{ github.ref_name }}.zip
+        asset_name: release-${{ github.ref_name }}.zip
         asset_content_type: application/zip
