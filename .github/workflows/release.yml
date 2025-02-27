@@ -19,7 +19,7 @@ jobs:
         mkdir release
         cp AutoTheme.ps1 release/
         cp config.ps1 release/
-        cp setup.ps1 release/
+        cp Setup.ps1 release/
         cp autotheme.png release/
         cp LICENSE release/
         cp README.md release/
