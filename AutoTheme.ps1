@@ -19,7 +19,7 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 # Script version
-$scriptVersion = "1.0.37"
+$scriptVersion = "1.0.38"
 
 # ============= Config file ==============
 
