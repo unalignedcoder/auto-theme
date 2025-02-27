@@ -13,19 +13,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-
-    - name: Extract version number
-      id: extract_version
-      run: |
-        VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' AutoTheme.ps1)
-        echo "VERSION=$VERSION" >> $GITHUB_ENV
-
     - name: Zip files
       run: |
+        TAG_NAME=${GITHUB_REF#refs/tags/}
         mkdir release
         cp AutoTheme.ps1 release/
         cp config.ps1 release/
@@ -33,7 +23,7 @@ jobs:
         cp autotheme.png release/
         cp LICENSE release/
         cp README.md release/
-        zip -r "release-$VERSION.zip" release/
+        zip -r "release-$TAG_NAME.zip" release/
 
     - name: Create Release
       id: create_release
@@ -54,6 +44,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-$VERSION.zip
-        asset_name: release-$VERSION.zip
+        asset_path: ./release-$TAG_NAME.zip
+        asset_name: release-$TAG_NAME.zip
         asset_content_type: application/zip
+
