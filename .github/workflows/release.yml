@@ -18,9 +18,10 @@ jobs:
 
     - name: Extract release notes from script
       run: |
-        sed -n '/^.RELEASE NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d' > release-notes.txt
-        echo "Extracted Release Notes:"
-        cat release-notes.txt
+        RELEASE_NOTES=$(sed -n '/^.RELEASE NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo "$RELEASE_NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Zip files
       run: |
@@ -34,9 +35,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
       with:
-        tag_name: ${{ github.ref }}
-        name: Release ${{ github.ref }}
-        body_path: release-notes.txt
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: ${{ env.RELEASE_NOTES }}
         draft: false
         prerelease: false
         files: release-${{ github.ref_name }}.zip
