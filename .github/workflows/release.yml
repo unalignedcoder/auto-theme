@@ -21,9 +21,9 @@ jobs:
         TAG_NAME=${GITHUB_REF#refs/tags/}
         mkdir release
         cp AutoTheme.ps1 release/
-        cp config.ps1 release/
-        cp setup.ps1 release/
-        cp autotheme.png release/
+        cp Config.ps1 release/
+        cp Setup.ps1 release/
+        cp AutoTheme.png release/
         cp LICENSE release/
         cp README.md release/
         zip -r "release-$TAG_NAME.zip" release/
