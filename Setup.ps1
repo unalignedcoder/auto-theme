@@ -77,7 +77,7 @@ $Triggers = @($LogonTrigger, $UnlockTrigger)
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
 
 # Register the task
-Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User "$env:USERNAME" -Action $Action -RunLevel Highest -Force | Out-Null
+Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User "$env:USERNAME" -Action $Action -RunLevel Highest -Compatibility Win8 -Force | Out-Null
 Write-Host "Scheduled task '$TaskName' created successfully!" -ForegroundColor Cyan
 
 # Prompt the user to run the task immediately

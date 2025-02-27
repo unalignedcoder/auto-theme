@@ -15,7 +15,7 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.27"
+$scriptVersion = "1.0.28"
 
 
 # ============= Config file ==============
@@ -753,7 +753,8 @@ $scriptVersion = "1.0.27"
 			if ($CurrentTheme -match $themeLight)  {
 
 				LogThis "The Mode is already set. No the switching needed."
-				CreateTemporaryTask $NextTriggerTime, $Name
+				CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
+
 				exit
 			}			
 
@@ -791,7 +792,8 @@ $scriptVersion = "1.0.27"
 			if ($CurrentTheme -match $themeDark)  {
 
 				LogThis "The Mode is already set. No theme switching needed."
-				CreateTemporaryTask $NextTriggerTime, $Name
+				CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
+
 				exit
 			}	
 
@@ -814,7 +816,8 @@ $scriptVersion = "1.0.27"
 		}	
 	
 		# Create the next temporary task
-		CreateTemporaryTask $NextTriggerTime, $Name
+		CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
+
 	}
 
 # ============= RUNTIME  ==============
