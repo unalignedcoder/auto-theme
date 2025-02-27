@@ -16,9 +16,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Set TAG_NAME Environment Variable
+      run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
     - name: Zip files
       run: |
-        TAG_NAME=${GITHUB_REF#refs/tags/}
         mkdir release
         cp AutoTheme.ps1 release/
         cp Config.ps1 release/
@@ -27,6 +29,8 @@ jobs:
         cp LICENSE release/
         cp README.md release/
         zip -r "release-$TAG_NAME.zip" release/
+      env:
+        TAG_NAME: ${{ env.TAG_NAME }}
 
     - name: Create Release
       id: create_release
@@ -47,7 +51,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release-$TAG_NAME.zip
-        asset_name: release-$TAG_NAME.zip
+        asset_path: ./release-${{ env.TAG_NAME }}.zip
+        asset_name: release-${{ env.TAG_NAME }}.zip
         asset_content_type: application/zip
-

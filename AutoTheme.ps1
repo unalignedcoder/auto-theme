@@ -10,16 +10,17 @@
 	It only connects to the internet to verify Location and Sunrise and Sunset times, depending on user location.
 	Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 	When ran from Task Scheduler, the script will automatically create the next temporary task for the next daylight event.
-	When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script will toggle between themes.
+	When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script will only toggle between themes.
 	IMPORTANT: Edit Config.ps1 to configure this script. The file contains all necessary explanations.
-	OPTIONALLY: Run Setup.ps1 to create the main Scheduled Task, or create one in task Scheduler.
-	For more information, refer to the README file, on Github. #>
+	OPTIONALLY: Run Setup.ps1 to create the main Scheduled Task, or create one in Task Scheduler.
+	For more information, refer to the README file, on Github.
 
 .URL
 	https://github.com/unalignedcoder/auto-theme/
+#>
 
 # Script version
-$scriptVersion = "1.0.38"
+$scriptVersion = "1.0.39"
 
 # ============= Config file ==============
 
