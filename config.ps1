@@ -65,6 +65,6 @@
 	$restartThemeService = $false
 	$forceAsAdmin = $false
 	
-	$appLogo = Join-Path $PSScriptRoot "autotheme.png"	
+	$appLogo = Join-Path $PSScriptRoot "AutoTheme.png"	
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
