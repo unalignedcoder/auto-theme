@@ -17,10 +17,15 @@
 
 .URL
 	https://github.com/unalignedcoder/auto-theme/
+
+.RELEASE NOTES
+	- Improvements to versioning automation
+	- Improvements to readability and logging
+
 #>
 
 # Script version
-$scriptVersion = "1.0.41"
+$scriptVersion = "1.0.42"
 
 # ============= Config file ==============
 
