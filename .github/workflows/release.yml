@@ -30,7 +30,7 @@ jobs:
 
     - name: Create Release
       id: create_release
-      uses: softprops/action-gh-release@v2  # ✅ Corrected action
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }}
       with:
@@ -39,4 +39,4 @@ jobs:
         body_path: release-notes.txt
         draft: false
         prerelease: false
-        files: release-${{ github.ref_name }}.zip  # Uploads the zip directly
+        files: release-${{ github.ref_name }}.zip
