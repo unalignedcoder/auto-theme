@@ -1,21 +1,21 @@
 <#
 .SYNOPSIS
-	Changes the active Windows theme based on a predefined schedule.
+	Changes the active Windows theme based on a predefined/daylight schedule.
 
 .DESCRIPTION
-	This Powershell script automatically switches the Windows theme based on Sunrise and Sunset, or hours set by the user.
-	Rather than using registry/system settings, it works by selecting given .theme files. 
+	This Powershell script automatically switches the Windows theme depending on Sunrise and Sunset, or hours set by the user.
+	Rather than using registry/system settings, it works by selecting given `.theme` files. 
 	This allows for a much higher degree of customization and compatibility.
 	The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 	It only connects to the internet to verify Location and Sunrise and Sunset times depending on user location.
-	Alternatively, it can use hours provided by the user, thus staying offline.
-	The script is meant to be ran from Task Scheduler, and it will automatically create the next temporary task.
-	If otherwise the script is run from terminal, as './AutoTheme.ps1', it only switches between themes.
-	IMPORTANT: Edit config.ps1 to configure this script. Run Setup.ps1 to create the Scheduled Task.
+	Alternatively, it can stay completely offline operating on fixed hours provided by the user.
+	When ran from Task Scheduler the script will automatically create the next temporary task for the next daylight event.
+	If otherwise the script is run as `./AutoTheme.ps1` from terminal or desktop shortcut, it will only toggle between themes.
+	IMPORTANT: Edit config.ps1 to configure this script. Run Setup.ps1 to create the Scheduled Task, or create one in task Scheduler.
 #>
 
 # Script version
-$scriptVersion = "1.0.28"
+$scriptVersion = "1.0.29"
 
 
 # ============= Config file ==============
@@ -144,12 +144,12 @@ $scriptVersion = "1.0.28"
 
 			try {
 
-				LogThis "Installing the BurnToast Notifications module" -verboseMessage $true
+				LogThis "Installing the BurnToast Notifications module"
 				Install-Module -Name BurntToast -Scope CurrentUser -Force -AllowClobber -SkipPublisherCheck -Confirm:$false
 
 			} catch {
 
-				LogThis "Failed to install BurntToast module: $_" -verboseMessage $true
+				LogThis "Failed to install BurntToast module: $_"
 				return
 			}
 		}
@@ -206,17 +206,17 @@ $scriptVersion = "1.0.28"
 	# Return coordinates for Sunrise API (may require Internet connectivity)
 	function LocateThis {
 		param (
-			[double]$FallbackLatitude = $UserLat,
-			[double]$FallbackLongitude = $UserLng,
+			[double]$FallbackLatitude = $userLat,
+			[double]$FallbackLongitude = $userLng,
 			[string]$FallbackTimezone = $UserTzid
 		)
 
 		LogThis "Getting location coordinates." -verboseMessage $true
 
-		# If $UseUserLoc is set to true, return user-defined coordinates and timezone
-		if ($UseUserLoc) {
+		# If $useUserLoc is set to true, return user-defined coordinates and timezone
+		if ($useUserLoc) {
 
-			LogThis "Using user-defined coordinates and timezone." -verboseMessage $true
+			LogThis "Using user-defined coordinates and timezone."
 
 			return @{
 				Latitude = $FallbackLatitude
@@ -231,14 +231,14 @@ $scriptVersion = "1.0.28"
 			Add-Type -AssemblyName 'Windows.Devices.Geolocation'
 			$geolocator = New-Object Windows.Devices.Geolocation.Geolocator
 			$position = $geolocator.GetGeopositionAsync().GetAwaiter().GetResult()
-			$UserLat = $position.Coordinate.Point.Position.Latitude
+			$userLat = $position.Coordinate.Point.Position.Latitude
 			$longitude = $position.Coordinate.Point.Position.Longitude
 			$UserTzid = [System.TimeZone]::CurrentTimeZone.StandardName
 
 			LogThis "Retrieved device location and system timezone." -verboseMessage $true
 
 			return @{
-				Latitude = [double]$UserLat
+				Latitude = [double]$userLat
 				Longitude = [double]$longitude
 				Timezone = $UserTzid
 			}
@@ -270,7 +270,7 @@ $scriptVersion = "1.0.28"
 
 		# Fallback to user-defined coordinates and timezone if all else fails
 
-		LogThis "Using user-defined coordinates and timezone." -verboseMessage $true
+		LogThis "Using user-defined coordinates and timezone."
 
 		return @{
 			Latitude = $FallbackLatitude
@@ -332,11 +332,15 @@ $scriptVersion = "1.0.28"
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
 
-			# Apply the theme
+			LogThis "Activating the .theme file" -verboseMessage $true
+
+			# Apply the theme; equivalent of double-clicking on a .theme file
 			Start-Process $ThemePath
 
 			# Wait a bit for the theme to apply and the Settings window to appear
 			Start-Sleep -Seconds 4
+
+			LogThis "Closing the Settings window" -verboseMessage $true
 
 			# Close the Settings window by stopping the "ApplicationFrameHost" process
 			$settingsProcess = Get-Process -Name "ApplicationFrameHost" -ErrorAction SilentlyContinue
@@ -350,53 +354,6 @@ $scriptVersion = "1.0.28"
 		}
 	}
 
-	# Toggle the theme
-	function ToggleTheme {
-
-		# Get current theme
-		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
-
-		if ($CurrentTheme -match "dark")  {
-
-			If (DoWeShuffle($LightPath)) {
-				RandomFirstWall -wallpaperDirectory $wallLightPath
-			}
-
-			LogThis "Selected $LightPath"  -verboseMessage $true
-
-			# set Light theme
-			StartTheme $LightPath
-
-			# extra apps
-			if ($RestartProcexp) {RestartProcessExplorer}
-			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "light" }
-
-			# log it
-			LogThis "$themeLight activated"
-			ShowBurntToast -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
-
-		}else {
-
-			If (DoWeShuffle($DarkPath)) {
-				RandomFirstWall -wallpaperDirectory $wallDarkPath
-			}
-
-			LogThis "Selected $DarkPath"  -verboseMessage $true
-
-			# set Dark theme
-			StartTheme $DarkPath
-
-			# extra apps
-			if ($RestartProcexp) {RestartProcessExplorer}
-			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
-
-			# log it
-			LogThis "$themeDark activated"
-			ShowBurntToast -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
-
-		}
-	}
-
 	<# Prepend the substring '_0_AutoTheme_' to one randomly chosen
 	wallpaper filename, so as to make it first pick. #>
 	function RandomFirstWall {
@@ -404,7 +361,7 @@ $scriptVersion = "1.0.28"
 			[string]$wallpaperDirectory
 		)
 
-		if (-Not ($RandomFirst)) {
+		if (-Not ($randomFirst)) {
 			LogThis "The first wallpaper will not be randomized."  -verboseMessage $true
 			return
 		}
@@ -441,14 +398,14 @@ $scriptVersion = "1.0.28"
 		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
 
 		# Select a random wallpaper
-		$RandomFirstWallpaper = $wallpapers | Get-Random
+		$randomFirstWallpaper = $wallpapers | Get-Random
 
 		# Rename it with "_0_AutoTheme_" prefix
-		$newWallpaperName = "_0_AutoTheme_" + $RandomFirstWallpaper.Name
+		$newWallpaperName = "_0_AutoTheme_" + $randomFirstWallpaper.Name
 		$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
-		Rename-Item -Path $RandomFirstWallpaper.FullName -NewName $newWallpaperNameFull -Force
+		Rename-Item -Path $randomFirstWallpaper.FullName -NewName $newWallpaperNameFull -Force
 
-		LogThis "Renamed $($RandomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
+		LogThis "Renamed $($randomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
 	}
 
 	# Check if a Scheduled task exists
@@ -469,19 +426,19 @@ $scriptVersion = "1.0.28"
 		)
 
 		# Check if TrueLaunch modification is enabled
-		if (-Not $TrueLaunch) {
+		if (-Not $customizeTrueLaunch) {
 			LogThis "TrueLaunchBar modification is disabled in config.ps1. Skipping." -verboseMessage $true
 			return
 		}
 
 		# Validate if the file exists
-		if (-Not (Test-Path $TrueLaunchiniFilePath)) {
-			LogThis "True Launch Bar settings file not found: $TrueLaunchiniFilePath" -verboseMessage $true
+		if (-Not (Test-Path $trueLaunchIniFilePath)) {
+			LogThis "True Launch Bar settings file not found: $trueLaunchIniFilePath" -verboseMessage $true
 			return
 		}
 
 		LogThis "Modifying True Launch Bar settings for $themeMode theme." -verboseMessage $true
-		LogThis "Using $TrueLaunchiniFilePath." -verboseMessage $true
+		LogThis "Using $trueLaunchIniFilePath." -verboseMessage $true
 
 		<# Define settings for dark and light themes
 		Study TLB Setup.ini for more customizations #>
@@ -509,7 +466,7 @@ $scriptVersion = "1.0.28"
 		$settingsToApply = if ($themeMode -eq "dark") { $settingsDark } else { $settingsLight }
 
 		# Read existing INI file content
-		$iniContent = Get-Content -Path $TrueLaunchiniFilePath -Raw
+		$iniContent = Get-Content -Path $trueLaunchIniFilePath -Raw
 		$updatedContent = $iniContent
 
 		# Modify settings under [settings] section
@@ -532,20 +489,18 @@ $scriptVersion = "1.0.28"
 		}
 
 		# Save the updated content back to the INI file
-		Set-Content -Path $TrueLaunchiniFilePath -Value $updatedContent -Encoding UTF8
+		Set-Content -Path $trueLaunchIniFilePath -Value $updatedContent -Encoding UTF8
 
-		LogThis "True Launch Bar settings updated. Restarting Explorer." -verboseMessage $true
+		LogThis "True Launch Bar settings updated." -verboseMessage $true
 
 		# Restart Explorer
 		RestartExplorer
-
-		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
-	# Restart the Themes Service
+	# Restart the 'Themes' Service
 	function RestartThemeService {
 
-		if ($themeServiceProblem && TestAdminRights) {
+		if ($restartThemeService && IsAdmin) {
 
 			try {
 
@@ -594,10 +549,10 @@ $scriptVersion = "1.0.28"
 		}
 	}
 
-	# Restart Explorer if needed
+	# Restart Windows Explorer
 	function RestartExplorer {
 
-		LogThis "Restarting Windows Explorer..." -verboseMessage $true
+		LogThis "Restarting Windows Explorer." -verboseMessage $true
 
 		# Stop all explorer instances
 		Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
@@ -608,10 +563,12 @@ $scriptVersion = "1.0.28"
 
 		#start if it hasn't already started
 		if (-Not ($explorer)) {Start-Process "explorer.exe" -ErrorAction SilentlyContinue}
+		
+		LogThis "Windows Explorer restarted." -verboseMessage $true
 	}
 
 	# Function to check if the script is running as admin
-	function TestAdminRights {
+	function IsAdmin {
 
 		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
 		$principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
@@ -628,7 +585,7 @@ $scriptVersion = "1.0.28"
 		}
 
 		# Relaunch script as admin if not already running as admin
-		if (-Not (TestAdminRights)) {
+		if (-Not (IsAdmin)) {
 
 			Write-Host "This script requires administrative privileges. Requesting elevation..." -ForegroundColor Yellow
 			Start-Process -FilePath "powershell.exe" `
@@ -637,9 +594,56 @@ $scriptVersion = "1.0.28"
 			Exit 0
 		}
 	}
+	
+	# Main function: Toggle the theme when running from Command
+	function ToggleTheme {
 
-	<# Create the scheduled task for next daylight events
-	Such tasks are 'temporary' because they are overwritten by the main task #>
+		# Get current theme
+		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
+
+		if ($CurrentTheme -match "dark")  {
+
+			If (DoWeShuffle($lightPath)) {
+				RandomFirstWall -wallpaperDirectory $wallLightPath
+			}
+
+			LogThis "Selected $lightPath" -verboseMessage $true
+
+			# set Light theme
+			StartTheme $lightPath
+
+			# extra apps
+			if ($restartProcexp) {RestartProcessExplorer}
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light" }
+
+			# log it
+			LogThis "$themeLight activated"
+			ShowBurntToast -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
+
+		}else {
+
+			If (DoWeShuffle($darkPath)) {
+				RandomFirstWall -wallpaperDirectory $wallDarkPath
+			}
+
+			LogThis "Selected $darkPath" -verboseMessage $true
+
+			# set Dark theme
+			StartTheme $darkPath
+
+			# extra apps
+			if ($restartProcexp) {RestartProcessExplorer}
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
+
+			# log it
+			LogThis "$themeDark activated"
+			ShowBurntToast -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
+
+		}
+	}
+
+	<# Main function: Create a 'temporary' scheduled task for next daylight events
+	This task will be overwritten by the main task using this function. #>
 	function CreateTemporaryTask {
 		param (
 			[DateTime]$NextTriggerTime,
@@ -674,7 +678,7 @@ $scriptVersion = "1.0.28"
 		try {
 
 			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
-			LogThis "Registered new task: $Name"  -verboseMessage $true
+			LogThis "Registered new task: $Name"
 
 		} catch {
 
@@ -682,18 +686,18 @@ $scriptVersion = "1.0.28"
 		}	
 	}
 
-	<# Select the Theme depending on daylight or chosen hours,
-	then schedules the next appropriate Temporary Task #>
-	function Main {
+	<# Main function: Calculate daylight events or pick fixed hours 
+	then select the Theme depending on daylight #>
+	function ScheduleTheme {
 
 		$Now = Get-Date
 
-		if ($UseFixedHours) {
+		if ($useFixedHours) {
 
 			# stay offline
-			$Sunrise = $LightThemeTime
-			$Sunset = $DarkThemeTime
-			$TomorrowSunrise = $LightThemeTime
+			$Sunrise = $lightThemeTime
+			$Sunset = $darkThemeTime
+			$TomorrowSunrise = $lightThemeTime
 
 		} else {
 
@@ -758,18 +762,18 @@ $scriptVersion = "1.0.28"
 				exit
 			}			
 
-			If (DoWeShuffle($LightPath)) {
+			If (DoWeShuffle($lightPath)) {
 
 				RandomFirstWall -wallpaperDirectory $wallLightPath	
 			}		
 
 			# set Light theme
-			LogThis "Setting the theme  $LightPath"  -verboseMessage $true
-			StartTheme -ThemePath $LightPath
+			LogThis "Setting the theme  $lightPath" -verboseMessage $true
+			StartTheme -ThemePath $lightPath
 
 			# extra apps
-			if ($RestartProcexp) {RestartProcessExplorer}
-			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "light" }
+			if ($restartProcexp) {RestartProcessExplorer}
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light" }
 
 			# logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
@@ -797,18 +801,18 @@ $scriptVersion = "1.0.28"
 				exit
 			}	
 
-			If (DoWeShuffle($DarkPath)) {
+			If (DoWeShuffle($darkPath)) {
 
 				RandomFirstWall -wallpaperDirectory $wallDarkPath	
 			}		
 			
 			# set Dark theme
-			LogThis "Setting the theme  $DarkPath" -verboseMessage $true
-			StartTheme -ThemePath $DarkPath
+			LogThis "Setting the theme  $darkPath" -verboseMessage $true
+			StartTheme -ThemePath $darkPath
 
 			# extra apps
-			if ($RestartProcexp) {RestartProcessExplorer}
-			if ($TrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
+			if ($restartProcexp) {RestartProcessExplorer}
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
 
 			# logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
@@ -817,7 +821,6 @@ $scriptVersion = "1.0.28"
 	
 		# Create the next temporary task
 		CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
-
 	}
 
 # ============= RUNTIME  ==============
@@ -846,7 +849,7 @@ $scriptVersion = "1.0.28"
 		}
 						
 		# Optionally restart Theme service, may solve issues with theme not being fully applied
-		if ($themeServiceProblem){RestartThemeService}
+		if ($restartThemeService){RestartThemeService}
 
 		# Optionally check if the script was run recently
 		if($checkLastRun){LastTime}
@@ -855,25 +858,25 @@ $scriptVersion = "1.0.28"
 		UpdateTime			
 
 		<# Here we call the functions to switch theme files,
-		depending on whether running from terminal or from Scheduled Task. #>
+		depending on whether running from command or from scheduled task. #>
 		if (IsRunningFromTerminal) {
 
 			LogThis "Script is running from Terminal." -verboseMessage $true
-			LogThis "Toggling Theme regardless of daylight"
+			LogThis "Toggling Theme, regardless of daylight."
 
 			ToggleTheme
 
-			LogThis "All done."
+			LogThis "All done." -verboseMessage $true
 			LogThis ""
 
 		} else {
 
 			LogThis "Script is running from Task Scheduler." -verboseMessage $true
-			LogThis "Selecting and scheduling Theme based on daylight"
+			LogThis "Selecting and scheduling Theme based on daylight."
 
-			Main
+			ScheduleTheme
 
-			LogThis "All done."
+			LogThis "All done." -verboseMessage $true
 			LogThis ""
 		}
 

@@ -8,32 +8,34 @@
 	<# Complete path to the .theme files. You can use a system path to default Windows themes
 	(as proposed in the example below) or a custom path of your choice.
 	However, consider that Windows will always copy your .theme files to LocalAppData. 
-	In order to use .theme files located in the script folder, you can use this:
-	$LightPath = Join-Path $PSScriptRoot $themeLight #>
-	$LightPath = Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeLight
-	$DarkPath =  Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeDark
+	You can use something like $lightPath = Join-Path $PSScriptRoot $themeLight
+	if you want to use .theme files located in the script folder. #>
+	$lightPath = Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeLight
+	$darkPath =  Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeDark
 
 	# Use fixed hours to switch Themes (keeps the script offline)
-	$UseFixedHours = $false
-	# Fixed hours for theme change (only needed if $UseFixedHours = $true)
-	$LightThemeTime = "07:00 AM"
-	$DarkThemeTime = "07:00 PM"
+	$useFixedHours = $false
+	# Fixed hours for theme change (only needed if $useFixedHours = $true)
+	$lightThemeTime = "07:00 AM"
+	$darkThemeTime = "07:00 PM"
 
 	<# Set to $true to always use a user-defined location.
 	Alernatively, the script will attempt to retrieve location from the system
 	or, failing that, from your ISP	
-	(only needed if $UseFixedHours = $false) #>
-	$UseUserLoc = $false
+	(only needed if $useFixedHours = $false) #>
+	$useUserLoc = $false
 
 	<# User-defined coordinates  
-	(only needed if $UseUserLoc = $true nd $UseFixedHours = $false) #>
-	$UserLat = "40.7128" 
-	$UserLng = "-74.0060"
+	(only needed if $UseUserLoc = $true and $useFixedHours = $false
+	Yet, better set this as the script will fall back to it, if all else fails.) #>
+	$userLat = "40.7128" 
+	$userLng = "-74.0060"
 	
-	<# Randomize first wallpaper: Even if 'shuffle=1' is set in a .theme file,
-	Windows will always use the first wallpaper in alphabetic order as the first.
+	<# Randomize first wallpaper.
+	Even if 'shuffle=1' is set in a .theme file, Windows will always use 
+	the first wallpaper in alphabetic order as the first shown.
 	Setting this to $true offers more variety as soon as the theme is applied. #>
-	$RandomFirst = $true
+	$randomFirst = $true
 
 	<# Paths to the folders for light and dark wallpapers.
 	(only needed if $randomFirst = true) #>
@@ -44,24 +46,23 @@
 
 	<# Sysinternals' Process Explorer doesn't automatically change theme when
 	the system theme is changed. Use this variable if you want it to be restarted. #>
-	$RestartProcexp = $true
+	$restartProcexp = $true
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
-	This is experimental. May not always work.
 	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
-	$TrueLaunch = $true
-	$TrueLaunchiniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\setup.ini"
+	$customizeTrueLaunch = $true
+	$trueLaunchIniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\setup.ini"
 	
-# ============= Developer variables ==============
+# ============= Debug variables ==============
 
 	$log = $true
 	$trimLog = $true
 	$verbose = $false
-	$interval = "10" 
+	$interval = "5" 
 	$checkLastRun = $true
-	$themeServiceProblem = $false # may require script to be run as admin
-	$maxLogEntries = "10"
+	$maxLogEntries = "20"
 
+	$restartThemeService = $false
 	$forceAsAdmin = $false
 	
 	$appLogo = Join-Path $PSScriptRoot "autotheme.png"	
