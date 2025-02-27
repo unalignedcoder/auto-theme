@@ -25,7 +25,7 @@
 #>
 
 # Script version
-$scriptVersion = "1.0.42"
+$scriptVersion = "1.0.43"
 
 # ============= Config file ==============
 

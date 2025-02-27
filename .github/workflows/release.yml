@@ -18,7 +18,7 @@ jobs:
 
     - name: Extract release notes from script
       run: |
-        awk '/^.RELEASE NOTES/{flag=1; next} /^#>/{flag=0} flag' AutoTheme.ps1 > release-notes.txt
+        sed -n '/^.RELEASE NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d' > release-notes.txt
         echo "Extracted Release Notes:"
         cat release-notes.txt
 
