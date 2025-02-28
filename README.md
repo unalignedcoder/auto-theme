@@ -2,14 +2,16 @@
 Powershell script which automatically switches Dark and Light themes and desktop backgrounds under Windows, depending on the time of day.
 
 ## Description
-This script automatically alternates between two  `.theme` files chosen by the user, either via scheduled task or when run directly. As a scheduled task, it finds sunrise or sunset times by retriving location, or it stays offline using the hours indicated by the user.
+This Powershell script automatically switches the Windows theme depending on Sunrise and Sunset, or hours set by the user.
+Rather than using registry/system settings, it works by selecting given `.theme` files. 
+This allows for a much higher degree of customization and compatibility.
 
 ## The forgotten benefits of using `.theme` files
-Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings. They then try to force a system refresh to show changes and in doing so incurr in many difficulties and potential compatibility problems for the user.
+Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings and in doing so incurr in many difficulties and potential compatibility problems for the user.
 
-This script however directly starts `.theme` files as processes, therefore letting the system itself seamlessly operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
+This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting the system itself seamlessly operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
 
-In fact, using `.theme` files allows to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
+In fact, in addition to switching light and dark themes, `.theme` files allow to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
 
 All it takes are `.theme` files that the user has created, or that can be found ready-made in the system.
 
