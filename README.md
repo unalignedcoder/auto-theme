@@ -61,5 +61,6 @@ For convenience. you can create a shortcut to the script and place it on your de
 
 ![image](https://github.com/user-attachments/assets/954d4a76-3001-4bd8-9e7d-460c1db3888a)
 
-
+## Extra apps
+Workarounds have been added for a couple of apps who do not switch theme gracefully when the system theme changes: TrueLaunchBar and ProcessExplorer. More will be added in the future if there is demand. More details in the Config file.
 
