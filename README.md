@@ -3,7 +3,7 @@ Powershell script which automatically switches Dark and Light themes and desktop
 
 ## Description
 This Powershell script automatically switches the Windows theme depending on Sunrise and Sunset, or hours set by the user.
-Rather than using registry/system settings, it works by selecting given `.theme` files. 
+Rather than using registry/system settings, it works by activating given `.theme` files. 
 This allows for a much higher degree of customization and compatibility.
 
 ## The forgotten benefits of using `.theme` files
