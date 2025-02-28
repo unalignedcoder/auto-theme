@@ -11,7 +11,6 @@
 	Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 	When ran from Task Scheduler, the script will automatically create the next temporary task for the next daylight event.
 	When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script will only toggle between themes.
-
 	IMPORTANT: Edit Config.ps1 to configure this script. The file contains all necessary explanations.
 	OPTIONALLY: Run Setup.ps1 to create the main Scheduled Task, or create one in Task Scheduler.
 	For more information, refer to the README file, on Github.
@@ -25,8 +24,8 @@
 
 #>
 
-# Script version
-$scriptVersion = "1.0.52"
+# Script version. This is automatically generated via pre-commit hook
+$scriptVersion = "1.0.53"
 
 # ============= Config file ==============
 
