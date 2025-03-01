@@ -55,6 +55,7 @@
 # ============= Debug variables ==============
 
 	$log = $true
+	$logFromTerminal = $true
 	$trimLog = $true
 	$verbose = $false
 	$interval = "5" 

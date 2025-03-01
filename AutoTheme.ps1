@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-	Changes the active Windows theme based on a predefined/daylight schedule.
+	Changes the active Windows theme based on a predefined/daylight schedule. Works in Windows 10/11.
 
 .DESCRIPTION
 	This Powershell script automatically switches the Windows theme depending on Sunrise and Sunset, or hours set by the user.
@@ -19,13 +19,13 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .RELEASE NOTES
-	- Testing versioning automation
-	- Improvements to code readability
+	- fixed an error in the code
+	- Added option to use log file when running from terminal
 
 #>
 
 # Script version. This is automatically generated via pre-commit hook
-$scriptVersion = "1.0.53"
+$scriptVersion = "1.0.54"
 
 # ============= Config file ==============
 
@@ -78,7 +78,8 @@ $scriptVersion = "1.0.53"
 				if (IsRunningFromTerminal) {
 
 					Write-Output "$message" # Output to console
-					# Add-Content -Path $logFile -Value "$message"  # Log to file
+					if ($logFromTerminal) {Add-Content -Path $logFile -Value "$message" }  # Log to file
+					# 
 
 				} else {
 
@@ -508,8 +509,9 @@ $scriptVersion = "1.0.53"
 
 	# Restart the 'Themes' Service
 	function RestartThemeService {
-
-		if ($restartThemeService && IsAdmin) {
+		
+		[bool]$IsAdmin = IsAdmin
+		if ($restartThemeService -and $IsAdmin) {
 
 			try {
 
@@ -766,7 +768,7 @@ $scriptVersion = "1.0.53"
 			# if the Theme is already set, create temporary tasks and exit
 			if ($CurrentTheme -match $themeLight)  {
 
-				LogThis "The Mode is already set. No the switching needed."
+				LogThis "Light mode is already set. No the switching needed."
 				CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
 
 				exit
@@ -805,7 +807,7 @@ $scriptVersion = "1.0.53"
 			# if the Theme is already set, create temporary tasks and exit
 			if ($CurrentTheme -match $themeDark)  {
 
-				LogThis "The Mode is already set. No theme switching needed."
+				LogThis "Dark mode is already set. No theme switching needed."
 				CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
 
 				exit
