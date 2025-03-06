@@ -19,13 +19,13 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .RELEASE NOTES
-	- fixed an error in the code
-	- Added option to use log file when running from terminal
+	- Improved restarting of Explorer
+	- Minor fixes
 
 #>
 
 # Script version. This is automatically generated via pre-commit hook
-$scriptVersion = "1.0.54"
+$scriptVersion = "1.0.55"
 
 # ============= Config file ==============
 
@@ -563,16 +563,20 @@ $scriptVersion = "1.0.54"
 	# Restart Windows Explorer
 	function RestartExplorer {
 
+		# Delay so that it doesn't mess with Windows startup
+		Start-Sleep -Seconds 40 
+
 		LogThis "Restarting Windows Explorer." -verboseMessage $true
 
 		# Stop all explorer instances
 		Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
 
-		Start-Sleep -Seconds 3  # Ensure it's fully closed
+		# Delay to ensure it's fully closed
+		Start-Sleep -Seconds 3  
 		
 		$explorer = Get-Process | Where-Object { $_.ProcessName -eq "explorer" } -ErrorAction SilentlyContinue
 
-		#start if it hasn't already started
+		# Start if it hasn't already started (avoids new window)
 		if (-Not ($explorer)) {Start-Process "explorer.exe" -ErrorAction SilentlyContinue}
 		
 		LogThis "Windows Explorer restarted." -verboseMessage $true
