@@ -18,7 +18,7 @@ jobs:
 
     - name: Extract release notes from script
       run: |
-        RELEASE_NOTES=$(sed -n '/^.RELEASE NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
+        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
         echo "$RELEASE_NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
