@@ -5,7 +5,7 @@
 	$themeLight = "Name-of-Light.theme"
 	$themeDark = "Name-of-Dark.theme"
 
-	<# Complete path to the `.theme` files. You can use a system path to default Windows themes
+	<# Complete path to the `.theme` files. You can use the default path to Windows themes
 	(as proposed in the example below) or a custom path of your choice.
 	Consider that Windows will always copy your `.theme` files to LocalAppData. 
 	You can use something like `$lightPath = Join-Path $PSScriptRoot $themeLight`
@@ -24,9 +24,9 @@
 	or, failing that, from your ISP, which may not give accurate results. #>
 	$useUserLoc = $false
 
-	<# User-defined coordinates. You can get this info from Google or similar services. 
+	<# User-defined coordinates. You can obtain this info from Google or similar services. 
 	(only retrieved if $UseUserLoc = $true and $useFixedHours = $false.
-	Yet, better set this as the script will fall back to it, if all else fails.) #>
+	Yet, better set this, as the script will fall back to it, if all else fails.) #>
 	$userLat = "40.7128" 
 	$userLng = "-74.0060"
 	
@@ -44,7 +44,8 @@
 # ============= Extra apps variables =============
 
 	<# Sysinternals Process Explorer doesn't automatically change theme when
-	the system theme is changed. Use this variable if you want it to be restarted. #>
+	the system theme is changed. Use this variable if you want it to be restarted. 
+	If you run Process Explorer as Admin, the script should also run as Admin. #>
 	$restartProcexp = $true
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)

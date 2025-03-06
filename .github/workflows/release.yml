@@ -1,12 +1,15 @@
 ﻿name: Create Release
 
+# This file automatically creates a Github Release when a new tag is pushed to the repository.
+# It is not concerned with the main functionality of the script in any way.
+
 on:
   push:
     tags:
-      - 'v*.*.*'  # Runs on version tags like v1.0.0
+      - 'v*.*.*'
 
 permissions:
-  contents: write  # Allow write access for creating a release
+  contents: write
 
 jobs:
   release:

@@ -57,6 +57,7 @@ if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
 }
 # Create the triggers
 $LogonTrigger = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERNAME"
+$startupTrigger = New-ScheduledTaskTrigger -AtStartup -User "$env:USERNAME"
 
 <# Create the Unlock Trigger using CIM, Thanks to
 https://stackoverflow.com/questions/53704188/syntax-for-execute-on-workstation-unlock #>
@@ -71,7 +72,8 @@ $UnlockTrigger = New-CimInstance `
 		UserId = "$env:USERNAME"
     } `
     -ClientOnly
-$Triggers = @($LogonTrigger, $UnlockTrigger)
+
+$Triggers = @($LogonTrigger, $startupTrigger, $UnlockTrigger)
 
 # Create the action
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
