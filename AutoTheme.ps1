@@ -21,11 +21,12 @@
 
 .NOTES
 	- Improvements in the way the scheduled tasks are created
+	- Minor fixes
 
 #>
 
-# Script version. This is automatically generated via pre-commit hook
-$scriptVersion = "1.0.59"
+# Script version. This is automatically updated via pre-commit hook
+$scriptVersion = "1.0.60"
 
 # ============= Config file ==============
 

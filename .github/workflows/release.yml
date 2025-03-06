@@ -1,7 +1,7 @@
 ﻿name: Create Release
 
 # This file automatically creates a Github Release when a new tag is pushed to the repository.
-# It is not concerned with the main functionality of the script in any way.
+# This is for VisualStudio-Github interaction only and does not affect script functionality.
 
 on:
   push:
