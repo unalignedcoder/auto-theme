@@ -23,13 +23,14 @@ In fact, in addition to switching light and dark themes, `.theme` files allow to
 All it takes are `.theme` files that the user has created (very easily, see below), or that can be found ready-made in the system.
 
 ## Installation
-1) Create custom **Light** and **Dark** themes as preferred. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
+1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your working folder.
+2) Create custom **Light** and **Dark** themes as preferred. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
 
 	![image](https://github.com/user-attachments/assets/4aeb4d7d-35c4-4712-8fc4-2d183a5fb3f1)
 
 Alternatively, use any `.theme` file found in the system, or downloaded online. Notice that `.theme` files can always be directly modified in a simple text editor. 
 
-2) Open the file `Config.ps1` and modify the following variables as preferred:
+3) Open the file `Config.ps1` and modify the following variables as preferred:
 
  	![image](https://github.com/user-attachments/assets/059c57d9-b502-4467-a3de-bbaeb7ed01b8)
 
