@@ -4,7 +4,7 @@ Powershell script which changes the active Windows theme and Desktop background,
 ## Description
 This script automatically switches the Windows active theme depending on Sunrise and Sunset, or hours set by the user.
 
-Rather than relying on registry/system settings, it works by activating given `.theme` files. This allows for a much higher degree of customization and compatibility.
+Rather than relying on registry/system settings, it works by activating given `.theme` files. This allows for a much higher degree of customization and compatibility, including changes to Desktop backgrounds, slideshows, colors and so forth.
 
 The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention. It will automatically create the next temporary task for the next daylight event. Such tasks ("Sunrise theme" and "Sunset theme") will be overwritten as a matter of course to avoid clutter.
 
