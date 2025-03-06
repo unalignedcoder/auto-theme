@@ -3,13 +3,14 @@
 	Changes the active Windows theme based on a predefined/daylight schedule. Works in Windows 10/11.
 
 .DESCRIPTION
-	This Powershell script automatically switches the Windows theme depending on Sunrise and Sunset, or hours set by the user.
-	Rather than using registry/system settings, it works by selecting given `.theme` files. 
+	This Powershell script automatically switches the Windows Theme depending on Sunrise and Sunset, or hours set by the user.
+	Rather than relying on registry/system settings, it works by activating given `.theme` files. 
 	This allows for a much higher degree of customization and compatibility.
 	The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 	It only connects to the internet to verify Location and Sunrise and Sunset times, depending on user location.
 	Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 	When ran from Task Scheduler, the script will automatically create the next temporary task for the next daylight event.
+	Such tasks ("Sunrise theme" and "Sunset theme") will be always overwritten to avoid clutter.
 	When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script will only toggle between themes.
 	IMPORTANT: Edit Config.ps1 to configure this script. The file contains all necessary explanations.
 	OPTIONALLY: Run Setup.ps1 to create the main Scheduled Task, or create one in Task Scheduler.
@@ -19,13 +20,14 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .RELEASE NOTES
-	- fixed an error in the code
-	- Added option to use log file when running from terminal
+	- Improved restarting of Explorer
+	- Improved in-file DESCRIPTION
+	- Minor fixes
 
 #>
 
 # Script version. This is automatically generated via pre-commit hook
-$scriptVersion = "1.0.54"
+$scriptVersion = "1.0.57"
 
 # ============= Config file ==============
 
@@ -563,16 +565,20 @@ $scriptVersion = "1.0.54"
 	# Restart Windows Explorer
 	function RestartExplorer {
 
+		# Delay so that it doesn't mess with Windows startup
+		Start-Sleep -Seconds 40 
+
 		LogThis "Restarting Windows Explorer." -verboseMessage $true
 
 		# Stop all explorer instances
 		Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
 
-		Start-Sleep -Seconds 3  # Ensure it's fully closed
+		# Delay to ensure it's fully closed
+		Start-Sleep -Seconds 3  
 		
 		$explorer = Get-Process | Where-Object { $_.ProcessName -eq "explorer" } -ErrorAction SilentlyContinue
 
-		#start if it hasn't already started
+		# Start if it hasn't already started (avoids new window)
 		if (-Not ($explorer)) {Start-Process "explorer.exe" -ErrorAction SilentlyContinue}
 		
 		LogThis "Windows Explorer restarted." -verboseMessage $true
