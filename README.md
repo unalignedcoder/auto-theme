@@ -1,10 +1,17 @@
 # AUTO THEME
-Powershell script which automatically switches Dark and Light themes and desktop backgrounds under Windows, depending on the time of day.
+Powershell script which changes the active Windows Theme based on a predefined/daylight schedule. Works in Windows 10/11.
 
 ## Description
-This Powershell script automatically switches the Windows theme depending on Sunrise and Sunset, or hours set by the user.
-Rather than using registry/system settings, it works by activating given `.theme` files. 
-This allows for a much higher degree of customization and compatibility.
+This script automatically switches the Windows active theme depending on Sunrise and Sunset, or hours set by the user.
+
+Rather than relying on registry/system settings, it works by activating given `.theme` files. This allows for a much higher degree of customization and compatibility.
+
+The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention. It will automatically create the next temporary task for the next daylight event. Such tasks ("Sunrise theme" and "Sunset theme") will be overwritten as a matter of course to avoid clutter.
+
+This script only connects to the internet to verify Location and Sunrise and Sunset times. Alternatively, it can stay completely offline operating on fixed hours provided by the user.
+
+When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script will toggle between themes, ignoring scheduled events.
+
 
 ## The forgotten benefits of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings and in doing so incurr in many difficulties and potential compatibility problems for the user.
@@ -13,14 +20,14 @@ This script however directly starts `.theme` files as processes (as if the user 
 
 In fact, in addition to switching light and dark themes, `.theme` files allow to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
 
-All it takes are `.theme` files that the user has created, or that can be found ready-made in the system.
+All it takes are `.theme` files that the user has created (very easily, see below), or that can be found ready-made in the system.
 
 ## Installation
-1) Create custom **Light** and **Dark** themes as preferred. To do so, simply modify settings in the _Personalize_ window (including for example a wallpaper slideshow) and then save it as custom theme.
+1) Create custom **Light** and **Dark** themes as preferred. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
 
 	![image](https://github.com/user-attachments/assets/4aeb4d7d-35c4-4712-8fc4-2d183a5fb3f1)
 
-Alternatively, use any `.theme` file found by defualt in the system, or downloaded online. Notice that `.theme` files can always be directly modified in a simple text editor. 
+Alternatively, use any `.theme` file found in the system, or downloaded online. Notice that `.theme` files can always be directly modified in a simple text editor. 
 
 2) Open the file `Config.ps1` and modify the following variables as preferred:
 
@@ -53,7 +60,7 @@ Alternatively, use any `.theme` file found by defualt in the system, or download
 ## Usage
 This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user. 
 
-When run from terminal, however, using `.\AutoTheme.ps1`, the script will simply 'toggle' the theme (switching from one `.theme` file to the other) and then exit. This can be useful for testing purposes, but also for the odd times when we need to manually switch the theme regardless of task settings. 
+When run from terminal, however, using `./AutoTheme.ps1`, the script will 'toggle' the theme (switching from one `.theme` file to the other) and then exit. It will ignore any scheduled event, although it will create the necessary ones if they are absent. This can be useful for testing purposes, but also for the odd times when we need to manually switch the theme regardless of task settings. 
 
 ![Animation](https://github.com/user-attachments/assets/4beeacf2-f026-4304-99ed-9b70f56f29fd)
 
