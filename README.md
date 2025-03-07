@@ -4,27 +4,27 @@ Powershell script which changes the active Windows theme and Desktop background,
 ## Description
 This script automatically switches the Windows active theme depending on Sunrise and Sunset, or hours set by the user.
 
-Rather than relying on registry/system settings, it works by activating given `.theme` files. This allows for a much higher degree of customization and compatibility, including changes to Desktop backgrounds, slideshows, colors and so forth.
+Rather than relying on registry/system settings, it works by activating `.theme` files. This allows for a much higher degree of customization and compatibility.
 
-The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention. It will automatically create the next temporary task for the next daylight event. Such tasks ("Sunrise theme" and "Sunset theme") will be overwritten as a matter of course to avoid clutter.
+The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
 This script only connects to the internet to verify Location and Sunrise and Sunset times. Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 
-When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script will toggle between themes, ignoring scheduled events.
+When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
 
 ## The forgotten benefits of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings and in doing so incurr in many difficulties and potential compatibility problems for the user.
 
-This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting the system itself seamlessly operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
+This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting Windows itself operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
 
 In fact, in addition to switching light and dark themes, `.theme` files allow to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
 
-All it takes are `.theme` files that the user has created (very easily, see below), or that can be found ready-made in the system.
+All it takes are two `.theme` files (very easy to create, see below.)
 
 ## Installation
-1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your working folder.
-2) Create custom **Light** and **Dark** themes as preferred. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
+1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
+2) Create custom **Light** and **Dark** themes. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
 
 	![image](https://github.com/user-attachments/assets/4aeb4d7d-35c4-4712-8fc4-2d183a5fb3f1)
 
