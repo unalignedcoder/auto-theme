@@ -62,7 +62,7 @@ Alternatively, use any `.theme` file found in the system, or downloaded online. 
 ## Usage
 This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user. 
 
-When run from terminal, however, using `./AutoTheme.ps1`, the script will 'toggle' the theme (switching from one `.theme` file to the other) and then exit. It will ignore any scheduled event, although it will create the necessary ones if they are absent. This can be useful for testing purposes, but also for the odd times when we need to manually switch the theme regardless of task settings. 
+When run from terminal, using `./AutoTheme.ps1`, the script will 'toggle' the theme (switching from one `.theme` file to the other) and then exit, ignoring any scheduled event. This can be useful for testing purposes, but also for the odd times when there is need to manually switch the theme regardless of task settings. 
 
 ![Animation](https://github.com/user-attachments/assets/4beeacf2-f026-4304-99ed-9b70f56f29fd)
 
