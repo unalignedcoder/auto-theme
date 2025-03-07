@@ -20,17 +20,16 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Improvements in the way the scheduled tasks are created
 	- Minor fixes
 
 #>
 
 # Script version. This is automatically updated via pre-commit hook
-$scriptVersion = "1.0.60"
+$scriptVersion = "1.0.61"
 
 # ============= Config file ==============
 
-	$ConfigPath = Join-Path $PSScriptRoot "config.ps1"
+	$ConfigPath = Join-Path $PSScriptRoot "Config.ps1"
 
 # ============= FUNCTIONS  ==============
 
@@ -334,37 +333,6 @@ $scriptVersion = "1.0.60"
 		return $false
 	}
 
-	# Run the .theme file
-	function StartTheme {
-		param (
-			[string]$ThemePath
-			)
-		
-		# Check if the theme file exists
-		if (Test-Path $ThemePath) {
-
-			LogThis "Activating the .theme file" -verboseMessage $true
-
-			# Apply the theme; equivalent of double-clicking on a .theme file
-			Start-Process $ThemePath
-
-			# Wait a bit for the theme to apply and the Settings window to appear
-			Start-Sleep -Seconds 4
-
-			LogThis "Closing the Settings window" -verboseMessage $true
-
-			# Close the Settings window by stopping the "ApplicationFrameHost" process
-			$settingsProcess = Get-Process -Name "ApplicationFrameHost" -ErrorAction SilentlyContinue
-			if ($settingsProcess) {
-				Stop-Process -Id $settingsProcess.Id
-			}
-
-		} else {
-
-			LogThis "Theme file not found: $ThemePath"
-		}
-	}
-
 	<# Prepend the substring '_0_AutoTheme_' to one randomly chosen
 	wallpaper filename, so as to make it first pick. #>
 	function RandomFirstWall {
@@ -610,6 +578,37 @@ $scriptVersion = "1.0.60"
 						  -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
 						  -Verb RunAs
 			Exit 0
+		}
+	}
+
+	# Run the .theme file
+	function StartTheme {
+		param (
+			[string]$ThemePath
+			)
+		
+		# Check if the theme file exists
+		if (Test-Path $ThemePath) {
+
+			LogThis "Activating the .theme file" -verboseMessage $true
+
+			# Apply the theme; equivalent of double-clicking on a .theme file
+			Start-Process $ThemePath
+
+			# Wait a bit for the theme to apply and the Settings window to appear
+			Start-Sleep -Seconds 4
+
+			LogThis "Closing the Settings window" -verboseMessage $true
+
+			# Close the Settings window by stopping the "ApplicationFrameHost" process
+			$settingsProcess = Get-Process -Name "ApplicationFrameHost" -ErrorAction SilentlyContinue
+			if ($settingsProcess) {
+				Stop-Process -Id $settingsProcess.Id
+			}
+
+		} else {
+
+			LogThis "Theme file not found: $ThemePath"
 		}
 	}
 	

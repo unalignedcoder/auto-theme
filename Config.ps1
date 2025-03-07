@@ -45,7 +45,7 @@
 
 	<# Sysinternals Process Explorer doesn't automatically change theme when
 	the system theme is changed. Use this variable if you want it to be restarted. 
-	If you run Process Explorer as Admin, the script should also run as Admin. #>
+	If you run Process Explorer as Admin, the script should also run as Admin for this to work. #>
 	$restartProcexp = $true
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
