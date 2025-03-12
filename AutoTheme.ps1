@@ -23,11 +23,10 @@
 	- Added variable for Explorer restart interval
 	- Improved the release-creation system
 	- Minor fixes
-
 #>
 
 # Script version. This is automatically updated via pre-commit hook
-$scriptVersion = "1.0.12"
+$scriptVersion = "1.0.13"
 
 # ============= Config file ==============
 
