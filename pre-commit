@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Path to your script
+SCRIPT_PATH="AutoTheme.ps1"
+
+# Extract the current version number
+CURRENT_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' "$SCRIPT_PATH")
+
+# Increment the patch version number
+IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+VERSION_PARTS[2]=$((VERSION_PARTS[2] + 1))
+NEW_VERSION="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.${VERSION_PARTS[2]}"
+
+# Update the version number in the script
+sed -i "s/\$scriptVersion = \"$CURRENT_VERSION\"/\$scriptVersion = \"$NEW_VERSION\"/" "$SCRIPT_PATH"
+
+# Add the updated script to the commit
+git add "$SCRIPT_PATH"
+
+echo "Updated script version to $NEW_VERSION"

@@ -1,0 +1,67 @@
+﻿name: Create Release
+
+# This Workflow automatically creates a Github Release when new tags are pushed to the repository.
+# The new tags are automatically created by a post-commit hook, after new commits are synced.
+# This is for VisualStudio-Github interaction only. It does not affect script functionality.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch the entire history
+
+    - name: Set up Git identity
+      run: |
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor }}@tuscoss.com"
+
+    - name: Extract version from script
+      id: extract_version
+      run: |
+        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' AutoTheme.ps1)
+        echo "New version: $NEW_VERSION"
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+    - name: Create and push tag
+      run: |
+        git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
+        git push origin "v$NEW_VERSION"
+
+    - name: Extract release notes from script
+      run: |
+        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo "$RELEASE_NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Zip files
+      run: |
+        mkdir -p release
+        cp AutoTheme.ps1 Config.ps1 Setup.ps1 AutoTheme.png LICENSE README.md release/
+        zip -r release-v$NEW_VERSION.zip release/
+        echo "ZIP_FILE=release-v$NEW_VERSION.zip" >> $GITHUB_ENV
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.NEW_VERSION }}
+        name: Release v${{ env.NEW_VERSION }}
+        body: ${{ env.RELEASE_NOTES }}
+        draft: false
+        prerelease: false
+        files: ${{ env.ZIP_FILE }}
