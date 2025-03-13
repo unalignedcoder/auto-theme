@@ -14,16 +14,6 @@ Alternatively, it can stay completely offline operating on fixed hours provided 
 
 When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
-
-## The forgotten benefits of using `.theme` files
-Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by directly modifying system behavior, incurring in many difficulties and potential compatibility problems for the user.
-
-This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting Windows itself operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
-
-In fact, this script to switching light and dark themes, `.theme` files allow to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
-
-All it takes are two `.theme` files (very easy to create, see below.)
-
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 2) Create custom **Light** and **Dark** themes. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
@@ -63,6 +53,18 @@ For convenience. you can create a shortcut to the script and place it on your de
 
 ## Extra apps
 Workarounds have been added for a couple of apps who do not switch theme gracefully when the system theme changes: TrueLaunchBar and ProcessExplorer. More will be added in the future if there is demand. More details in the Config file.
+
+
+
+## The forgotten benefits of using `.theme` files
+Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by directly modifying system behavior, incurring in many difficulties and potential compatibility problems for the user.
+
+This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting Windows itself operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
+
+In fact, this script to switching light and dark themes, `.theme` files allow to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
+
+All it takes are two `.theme` files (very easy to create, see Installation instructions above.)
+
 <p>&nbsp;</p>
 
 
