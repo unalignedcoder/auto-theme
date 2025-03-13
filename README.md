@@ -28,7 +28,7 @@ All it takes are two `.theme` files (very easy to create, see below.)
 
 	![image](https://github.com/user-attachments/assets/0999c082-16ec-456c-ba58-88783bc1abb3)
 
-Alternatively, use any `.theme` file found in the system, or downloaded online. Notice that `.theme` files can always be directly modified in a simple text editor. 
+Notice that `.theme` files can always be directly modified in a simple text editor. 
 
 3) Open the file `Config.ps1` and modify the following variables as preferred:
 
