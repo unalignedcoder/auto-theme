@@ -1,4 +1,4 @@
-﻿name: Create Release
+name: Create Release
 
 # This Workflow automatically creates a Github Release when new tags are pushed to the repository.
 # This is for VisualStudio-Github interaction only. It does not affect script functionality.
