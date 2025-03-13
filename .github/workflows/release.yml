@@ -1,4 +1,4 @@
-﻿name: Create Release
+name: Create Release
 
 # This Workflow automatically creates a Github Release when new tags are pushed to the repository.
 # This is for VisualStudio-Github interaction only. It does not affect script functionality.
@@ -20,6 +20,7 @@ jobs:
       uses: actions/checkout@v4 # checks out the repository to the runner
       with:
         fetch-depth: 0 # need this to get all history for the tag check
+        token: ${{ secrets.PAT_GITHUB }} # rather than ${{ secrets.GITHUB_TOKEN }}
 
     # apparently we need this when creating and pushing tags (lame)
     - name: Set up Git identity
