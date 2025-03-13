@@ -22,11 +22,10 @@
 .NOTES
 	- Improved the release-creation system
 	- Minor fixes
-
 #>
 
 # Script version. This is automatically updated via pre-commit hook
-$scriptVersion = "1.0.17"
+$scriptVersion = "1.0.18"
 
 # ============= Config file ==============
 
