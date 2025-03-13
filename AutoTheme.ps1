@@ -20,13 +20,12 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Added variable for Explorer restart interval
 	- Improved the release-creation system
 	- Minor fixes
 #>
 
 # Script version. This is automatically updated via pre-commit hook
-$scriptVersion = "1.0.15"
+$scriptVersion = "1.0.16"
 
 # ============= Config file ==============
 
