@@ -6,9 +6,9 @@ This script automatically switches the Windows active theme depending on Sunrise
 
 Rather than relying on registry/system settings, it works by activating `.theme` files. This allows for a much higher degree of customization and compatibility.
 
-The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
+It is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
-This script only connects to the internet to verify Location and Sunrise and Sunset times. Alternatively, it can stay completely offline operating on fixed hours provided by the user.
+It only connects to the internet to verify Location for Sunrise and Sunset times. Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 
 When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
