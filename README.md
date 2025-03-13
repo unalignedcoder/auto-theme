@@ -1,5 +1,5 @@
 # AUTO THEME
-Powershell script which changes the active Windows theme and Desktop background, based on a predefined/daylight schedule. Works in Windows 10/11.  Not tested in Windows 7.
+Powershell script which changes the active Windows theme and Desktop background based on a predefined/daylight schedule. Works in Windows 10/11.  Not tested in Windows 7.
 
 ## Description
 This script automatically switches the Windows active theme depending on Sunrise and Sunset, or hours set by the user.
