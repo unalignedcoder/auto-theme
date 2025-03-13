@@ -43,7 +43,7 @@ When run from terminal, using `./AutoTheme.ps1`, the script will 'toggle' the th
 ![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/aa45e82d-9578-4446-abd8-6a1b0c6473e4 "The command can be run in terminal in verbose mode.")
 <br /><sup>The command `./AutoTheme.ps1` can be run in terminal in verbose mode.</sup>
 
-For convenience. you can create a shortcut to the script and place it on your desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
+For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
 
 ![image](https://github.com/user-attachments/assets/f8e2d534-7696-464d-9d83-e18a39ea9942 "A Windows shortcut can be created to directly toggle the theme.")
 <br /><sup>A Windows shortcut can be created to directly toggle the theme.</sup>
