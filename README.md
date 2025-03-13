@@ -14,7 +14,7 @@ When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the
 
 
 ## The forgotten benefits of using `.theme` files
-Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by modifying directly system registry settings and in doing so incurr in many difficulties and potential compatibility problems for the user.
+Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by directly modifying system behavior, incurring in many difficulties and potential compatibility problems for the user.
 
 This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting Windows itself operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
 
