@@ -21,8 +21,6 @@ When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the
 	![image](https://github.com/user-attachments/assets/0999c082-16ec-456c-ba58-88783bc1abb3 "In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.")
 	<p align="right"><sup>In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.</sup></p>
 
-Notice that `.theme` files can always be directly modified in a simple text editor. 
-
 3) Open the file `Config.ps1` and modify the following variables as preferred:
 
  	![image](https://github.com/user-attachments/assets/b171dd32-3667-4107-b764-c993385c4bc0 "All entries in the config file contain exhaustive explanations.")
