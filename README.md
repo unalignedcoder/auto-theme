@@ -50,7 +50,7 @@ For convenience. you can create a shortcut to the script and place it on your de
 <p align="right"><sup>A Windows shortcut can be created to directly toggle the theme.</sup></p>
 
 ## Extra apps
-Workarounds have been added for a couple of apps who do not switch theme gracefully when the system theme changes: TrueLaunchBar and ProcessExplorer. More will be added in the future if there is demand. More details in the Config file.
+Workarounds have been added for a couple of apps who do not switch theme gracefully when the system theme changes: **TrueLaunchBar** and **ProcessExplorer**. More will be added in the future if there is demand. More details in the Config file.
 
 
 
