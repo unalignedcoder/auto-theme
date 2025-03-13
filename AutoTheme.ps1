@@ -26,7 +26,7 @@
 #>
 
 # Script version. This is automatically updated via pre-commit hook
-$scriptVersion = "1.0.14"
+$scriptVersion = "1.0.15"
 
 # ============= Config file ==============
 

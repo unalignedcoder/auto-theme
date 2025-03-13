@@ -21,14 +21,14 @@ jobs:
       with:
         fetch-depth: 0 # need this to get all history for the tag check
 
-    # need this when using secrets.GITHUB_TOKEN (see last step below)
+    # apparently we need this when creating and pushing tags (lame)
     - name: Set up Git identity
       run: |
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor }}@tuscoss.com"
 
-    # the version number in the script is being automatically
-    # updated via a post-commit hook, so we need to extract it
+    # the version number in the script is being automatically updated
+    # via a post-commit hook in VS, here we only need to extract it
     - name: Extract version from script
       id: extract_version
       run: |
@@ -72,13 +72,13 @@ jobs:
         zip -r release-v$NEW_VERSION.zip release/
         echo "ZIP_FILE=release-v$NEW_VERSION.zip" >> $GITHUB_ENV
 
-    # create the release
+    # create the release if tag didn't exist
     - name: Create Release
       if: env.TAG_EXISTS == 'false'
       id: create_release
       uses: softprops/action-gh-release@v2
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PAT_GITHUB }} # ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: v${{ env.NEW_VERSION }}
         name: Release v${{ env.NEW_VERSION }}
