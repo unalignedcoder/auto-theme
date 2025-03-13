@@ -1,32 +1,34 @@
 ﻿name: Create Release
 
 # This Workflow automatically creates a Github Release when new tags are pushed to the repository.
-# The new tags are automatically created by a post-commit hook, after new commits are synced.
 # This is for VisualStudio-Github interaction only. It does not affect script functionality.
 
 on:
   push:
     branches:
-      - master
+      - master # name of the main branch goes here
 
 permissions:
   contents: write
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # runs on the latest version of ubuntu
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4 # checks out the repository to the runner
       with:
-        fetch-depth: 0  # Fetch the entire history
+        fetch-depth: 0 # need this to get all history for the tag check
 
+    # need this when using secrets.GITHUB_TOKEN (see last step below)
     - name: Set up Git identity
       run: |
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor }}@tuscoss.com"
 
+    # the version number in the script is being automatically
+    # updated via a post-commit hook, so we need to extract it
     - name: Extract version from script
       id: extract_version
       run: |
@@ -34,11 +36,27 @@ jobs:
         echo "New version: $NEW_VERSION"
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-    - name: Create and push tag
+    # check if the tag already exists
+    - name: Check if tag exists
+      id: check_tag
+      run: |
+        if git rev-parse "v$NEW_VERSION" >/dev/null 2>&1; then
+          echo "Tag v$NEW_VERSION already exists"
+          echo "TAG_EXISTS=true" >> $GITHUB_ENV
+        else
+          echo "Tag v$NEW_VERSION does not exist"
+          echo "TAG_EXISTS=false" >> $GITHUB_ENV
+        fi
+
+    # if tag doesn't exist, create it
+    # if it does, skip to the next step
+    - name: Create and push tag (if it doesn't exist)
+      if: env.TAG_EXISTS == 'false'
       run: |
         git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
         git push origin "v$NEW_VERSION"
 
+    # extract release notes from the script
     - name: Extract release notes from script
       run: |
         RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
@@ -46,6 +64,7 @@ jobs:
         echo "$RELEASE_NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
+    # create the zip file for the release
     - name: Zip files
       run: |
         mkdir -p release
@@ -53,7 +72,9 @@ jobs:
         zip -r release-v$NEW_VERSION.zip release/
         echo "ZIP_FILE=release-v$NEW_VERSION.zip" >> $GITHUB_ENV
 
+    # create the release
     - name: Create Release
+      if: env.TAG_EXISTS == 'false'
       id: create_release
       uses: softprops/action-gh-release@v2
       env:
