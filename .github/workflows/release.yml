@@ -32,7 +32,7 @@ jobs:
     - name: Extract version from script
       id: extract_version
       run: |
-        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' AutoTheme.ps1)
+        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' Config.ps1)
         echo "New version: $NEW_VERSION"
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
@@ -59,9 +59,11 @@ jobs:
     # extract release notes from the script
     - name: Extract release notes from script
       run: |
+        WARNING_MESSAGE="**Careful**, edit the new Config.ps1 before overwriting the old one."
         RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
+        FULL_RELEASE_NOTES="$WARNING_MESSAGE\n\n$RELEASE_NOTES"
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-        echo "$RELEASE_NOTES" >> $GITHUB_ENV
+        echo "$FULL_RELEASE_NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
     # create the zip file for the release

@@ -73,4 +73,4 @@
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.20"
+	$scriptVersion = "1.0.21"

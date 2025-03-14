@@ -20,10 +20,9 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Improved Setup process
+	- Improved the Setup process
 	- Improved auto versioning
 	- Minor fixes
-
 #>
 
 # ============= Config file ==============
