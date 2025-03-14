@@ -20,13 +20,11 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Improved the release-creation system
+	- Improved Setup process
+	- Improved auto versioning
 	- Minor fixes
 
 #>
-
-# Script version. This is automatically updated via pre-commit hook
-$scriptVersion = "1.0.19"
 
 # ============= Config file ==============
 
@@ -189,7 +187,7 @@ $scriptVersion = "1.0.19"
 	# Check if the script has been run in the last hour
 	function LastTime {
 
-		LogThis "Checking if script was run in the last $interval minutes"  -verboseMessage $true
+		LogThis "Checking if script was run in the last $lastRunInterval minutes"  -verboseMessage $true
 
 		if (Test-Path $lastRunFile) {
 
@@ -199,9 +197,9 @@ $scriptVersion = "1.0.19"
 
 			$timeSinceLastRun = $now - $lastRun
 
-			if ($timeSinceLastRun.TotalMinutes -lt $interval) {
+			if ($timeSinceLastRun.TotalMinutes -lt $lastRunInterval) {
 
-				LogThis "Script was run within the last $interval minutes. Exiting."
+				LogThis "Script was run within the last $lastRunInterval minutes. Exiting."
 				exit
 			}
 		}
@@ -859,7 +857,7 @@ $scriptVersion = "1.0.19"
 		# Start logging
 		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 		LogThis ""
-		LogThis "$timestamp === Script started (Version: $scriptVersion)"
+		LogThis "$timestamp === Auto-Theme script started (Version: $scriptVersion)"
 
 		# Optionally force admin mode
 		if ($forceAsAdmin) {
@@ -885,7 +883,7 @@ $scriptVersion = "1.0.19"
 
 			ToggleTheme
 
-			LogThis "=== All done (Version: $scriptVersion)" -verboseMessage $true
+			LogThis "=== All done." -verboseMessage $true
 			LogThis ""
 
 		} else {
@@ -895,7 +893,7 @@ $scriptVersion = "1.0.19"
 
 			ScheduleTheme
 
-			LogThis "=== All done (Version: $scriptVersion)" -verboseMessage $true
+			LogThis "=== All done." -verboseMessage $true
 			LogThis ""
 		}
 

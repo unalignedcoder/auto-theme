@@ -1,4 +1,3 @@
-
 # ============= User variables =============
 
 	# Name of theme files
@@ -56,11 +55,11 @@
 # ============= Debug variables ==============
 
 	$log = $true
-	$logFromTerminal = $true
+	$logFromTerminal = $false
 	$trimLog = $true
 	$verbose = $false
-	$interval = "5"
-	$waitExplorer = "50"
+	$lastRunInterval = "5"
+	$waitExplorer = "30"
 	$checkLastRun = $true
 	$maxLogEntries = "20"
 
@@ -70,3 +69,8 @@
 	$appLogo = Join-Path $PSScriptRoot "AutoTheme.png"
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
+
+# ============= Script Version ==============
+
+	# This is automatically updated via pre-commit hook
+	$scriptVersion = "1.0.20"
