@@ -14,6 +14,10 @@ Alternatively, it can stay completely offline operating on fixed hours provided 
 
 When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
+&nbsp;
+
+<p align=center>Why, thank you for asking!<br />👉 You can donate to this project <a href="https://www.buymeacoffee.com/unalignedcoder" target="_blank" title="buymeacoffee.com">here</a>👈</p>
+
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 2) Create custom **Light** and **Dark** themes. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
@@ -22,7 +26,7 @@ When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the
 	<br /><sup>In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.</sup>
 3) Open the file `Config.ps1` and modify the following variables as preferred:
 
- 	![image](https://github.com/user-attachments/assets/b171dd32-3667-4107-b764-c993385c4bc0 "All entries in the config file contain exhaustive explanations.")
+ 	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
 
 5) (optional) Run the script `Setup.ps1` to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
