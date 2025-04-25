@@ -3,7 +3,7 @@
 	Changes the active Windows theme based on a predefined/daylight schedule. Works in Windows 10/11.
 
 .DESCRIPTION
-	This Powershell script automatically switches the Windows Theme depending on Sunrise and Sunset, or hours set by the user.
+	This highly-sophisticated Powershell script automatically switches the Windows Theme depending on Sunrise and Sunset, or hours set by the user.
 	Rather than relying on registry/system settings, it works by activating given `.theme` files. 
 	This allows for a much higher degree of customization and compatibility.
 	The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention. 
@@ -20,15 +20,16 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
- - Fixed a problem where the script would fetch daylight times for the wrong day, depending on time zone differences. 
- - Greatly improved efficiency when user sets fixed hours for theme switching.
-
+ - Fixed a problem where the script would fetch daylight times for the wrong day, depending on time zone differences.
+- Greatly improved efficiency when user choses fixed hours for theme switching.
+- Made changes to the auto-versioning system.
+- Minor fixes.
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.23"
+	$scriptVersion = "1.0.24"
 
 # ============= Config file ==============
 

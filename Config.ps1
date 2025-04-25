@@ -14,6 +14,7 @@
 
 	# Use fixed hours to switch Themes (keeps the script completely offline)
 	$useFixedHours = $false
+
 	<# Fixed hours for theme change (only needed if $useFixedHours = $true).
 	You are free to use 12 or 24 hours formats here. #>
 	$lightThemeTime = "07:00 AM"
