@@ -32,7 +32,7 @@ jobs:
     - name: Extract version from script
       id: extract_version
       run: |
-        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' Config.ps1)
+        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' AutoTheme.ps1)
         echo "New version: $NEW_VERSION"
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
