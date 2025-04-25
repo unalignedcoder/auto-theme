@@ -211,82 +211,6 @@
 		$now | Out-File -FilePath $lastRunFile -Force
 	}
 
-	# Return coordinates for Sunrise API (may require Internet connectivity)
-	function LocateThis {
-		param (
-			[double]$FallbackLatitude = $userLat,
-			[double]$FallbackLongitude = $userLng,
-			[string]$FallbackTimezone = $UserTzid
-		)
-
-		LogThis "Getting location coordinates." -verboseMessage $true
-
-		# If $useUserLoc is set to true, return user-defined coordinates and timezone
-		if ($useUserLoc) {
-
-			LogThis "Using user-defined coordinates and timezone."
-
-			return @{
-				Latitude = $FallbackLatitude
-				Longitude = $FallbackLongitude
-				Timezone = $FallbackTimezone
-			}
-		}
-
-		# Attempt to get location and timezone from Device Geolocation
-		try {
-
-			Add-Type -AssemblyName 'Windows.Devices.Geolocation'
-			$geolocator = New-Object Windows.Devices.Geolocation.Geolocator
-			$position = $geolocator.GetGeopositionAsync().GetAwaiter().GetResult()
-			$userLat = $position.Coordinate.Point.Position.Latitude
-			$longitude = $position.Coordinate.Point.Position.Longitude
-			$UserTzid = [System.TimeZone]::CurrentTimeZone.StandardName
-
-			LogThis "Retrieved device location and system timezone." -verboseMessage $true
-
-			return @{
-				Latitude = [double]$userLat
-				Longitude = [double]$longitude
-				Timezone = $UserTzid
-			}
-		}
-		catch {
-
-			LogThis "Device location and timezone retrieval failed. Trying online service." -verboseMessage $true
-		}
-
-		# Attempt to get location and timezone from online service
-		try {
-
-			$response = Invoke-RestMethod -Uri "http://ip-api.com/json"
-			if ($response.status -eq "success") {
-
-				LogThis "Retrieved location and timezone from online service."
-
-				return @{
-					Latitude = [double]$response.lat
-					Longitude = [double]$response.lon
-					Timezone = $response.timezone
-				}
-			}
-		}
-		catch {
-
-			LogThis "Online service location and timezone retrieval failed. Using fallback." -verboseMessage $true
-		}
-
-		# Fallback to user-defined coordinates and timezone if all else fails
-
-		LogThis "Using user-defined coordinates and timezone."
-
-		return @{
-			Latitude = $FallbackLatitude
-			Longitude = $FallbackLongitude
-			Timezone = $FallbackTimezone
-		}
-	}
-
 	# Check whether shuffle is enabled in the .theme file
 	function DoWeShuffle {
 		param (
@@ -383,16 +307,6 @@
 		Rename-Item -Path $randomFirstWallpaper.FullName -NewName $newWallpaperNameFull -Force
 
 		LogThis "Renamed $($randomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
-	}
-
-	# Check if a Scheduled task exists
-	function TaskExists {
-		param (
-			[string]$taskName
-		)
-		
-		$task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
-		return $null -ne $task
 	}
 
 	# Modify TrueLaunchBar default colors
@@ -579,6 +493,82 @@
 		}
 	}
 
+	# Return coordinates for Sunrise API (may require Internet connectivity)
+	function LocateThis {
+		param (
+			[double]$FallbackLatitude = $userLat,
+			[double]$FallbackLongitude = $userLng,
+			[string]$FallbackTimezone = $UserTzid
+		)
+
+		LogThis "Getting location coordinates." -verboseMessage $true
+
+		# If $useUserLoc is set to true, return user-defined coordinates and timezone
+		if ($useUserLoc) {
+
+			LogThis "Using user-defined coordinates and timezone."
+
+			return @{
+				Latitude = $FallbackLatitude
+				Longitude = $FallbackLongitude
+				Timezone = $FallbackTimezone
+			}
+		}
+
+		# Attempt to get location and timezone from Device Geolocation
+		try {
+
+			Add-Type -AssemblyName 'Windows.Devices.Geolocation'
+			$geolocator = New-Object Windows.Devices.Geolocation.Geolocator
+			$position = $geolocator.GetGeopositionAsync().GetAwaiter().GetResult()
+			$userLat = $position.Coordinate.Point.Position.Latitude
+			$longitude = $position.Coordinate.Point.Position.Longitude
+			$UserTzid = [System.TimeZone]::CurrentTimeZone.StandardName
+
+			LogThis "Retrieved device location and system timezone." -verboseMessage $true
+
+			return @{
+				Latitude = [double]$userLat
+				Longitude = [double]$longitude
+				Timezone = $UserTzid
+			}
+		}
+		catch {
+
+			LogThis "Device location and timezone retrieval failed. Trying online service." -verboseMessage $true
+		}
+
+		# Attempt to get location and timezone from online service
+		try {
+
+			$response = Invoke-RestMethod -Uri "http://ip-api.com/json"
+			if ($response.status -eq "success") {
+
+				LogThis "Retrieved location and timezone from online service."
+
+				return @{
+					Latitude = [double]$response.lat
+					Longitude = [double]$response.lon
+					Timezone = $response.timezone
+				}
+			}
+		}
+		catch {
+
+			LogThis "Online service location and timezone retrieval failed. Using fallback." -verboseMessage $true
+		}
+
+		# Fallback to user-defined coordinates and timezone if all else fails
+
+		LogThis "Using user-defined coordinates and timezone."
+
+		return @{
+			Latitude = $FallbackLatitude
+			Longitude = $FallbackLongitude
+			Timezone = $FallbackTimezone
+		}
+	}
+
 	# Run the .theme file
 	function StartTheme {
 		param (
@@ -610,6 +600,74 @@
 		}
 	}
 	
+	# Check if a Scheduled task exists
+	function TaskExists {
+		param (
+			[string]$taskName
+		)
+		
+		$task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+		return $null -ne $task
+	}
+
+	<# Create a scheduled task for next daylight events
+	This task will be created or overwritten by the main task. #>
+	function CreateScheduledTask {
+		param (
+			[DateTime]$NextTriggerTime,
+			[String]$Name
+		)
+    
+		# Schedule next run
+		LogThis "Setting scheduled task: $Name"
+		$arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
+		$fullCommand = "PowerShell.exe $arguments"
+		LogThis "Full Command: $fullCommand" -verboseMessage $true
+
+		LogThis "Creating scheduled task action..." -verboseMessage $true
+		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
+
+		# Different trigger depending on if we're using fixed hours
+		if ($useFixedHours -and ($Name -eq "Fixed Sunrise theme" -or $Name -eq "Fixed Sunset theme")) {
+
+			# For fixed hours, create a daily trigger at the specific time
+			$timeOfDay = $NextTriggerTime.ToString("HH:mm")
+			$trigger = New-ScheduledTaskTrigger -Daily -At $timeOfDay
+			LogThis "Created daily trigger for $timeOfDay" -verboseMessage $true
+
+		} else {
+
+			# For dynamic times, create a one-time trigger
+			$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
+			LogThis "Created one-time trigger for $NextTriggerTime" -verboseMessage $true
+		}
+    
+		$userSid = $env:USERNAME
+		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
+		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8
+
+		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
+		LogThis "Scheduled task action created." -verboseMessage $true
+
+		# Unregister the old task if it exists
+		if (TaskExists $Name) {
+
+			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
+			LogThis "Unregistered existing task: $Name" -verboseMessage $true
+		}
+
+		# Register the new task
+		try {
+
+			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
+			LogThis "Registered new task: $Name"
+
+		} catch {
+
+			LogThis "Error registering task: $_"
+		}    
+	}
+
 	<# Main function: Toggle the theme when running from Terminal
 	using the command `./AutoTheme.ps1` #>
 	function ToggleTheme {
@@ -658,84 +716,136 @@
 		}
 	}
 
-	<# Main function: Create a 'temporary' scheduled task for next daylight events
-	This task will be overwritten by the main task using this function. #>
-	function CreateTemporaryTask {
-		param (
-			[DateTime]$NextTriggerTime,
-			[String]$Name
-		)
-		
-		# Schedule next run
-		LogThis "Setting temporary Scheduled Task"
-		$arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
-		$fullCommand = "PowerShell.exe $arguments"
-		LogThis "Full Command: $fullCommand"  -verboseMessage $true
-
-		LogThis "Creating scheduled task action..." -verboseMessage $true
-		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
-
-		$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-		$userSid = $env:USERNAME
-		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
-		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8
-
-		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
-		LogThis "Scheduled task action created."  -verboseMessage $true
-
-		# Unregister the old task if it exists
-		if (TaskExists $Name) {
-
-			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
-			LogThis "Unregistered existing task: $Name"  -verboseMessage $true
-		}
-
-		# Register the new task
-		try {
-
-			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
-			LogThis "Registered new task: $Name"
-
-		} catch {
-
-			LogThis "Error registering task: $_"
-		}	
-	}
-
 	<# Main function: Calculate daylight events or pick fixed hours 
 	then select the Theme depending on daylight #>
 	function ScheduleTheme {
-
 		$Now = Get-Date
+		$NowDate = $Now.ToString("yyyy-MM-dd")
 
 		if ($useFixedHours) {
 
-			# stay offline
-			$Sunrise = $lightThemeTime
-			$Sunset = $darkThemeTime
-			$TomorrowSunrise = $lightThemeTime
+
+			# Parse fixed times as proper DateTime objects
+			try {
+        
+				# Try parsing with various common formats
+				if ($lightThemeTime -match '^\d{1,2}:\d{2}$') {
+					# 24-hour format (e.g., "07:00")
+					$timeComponents = $lightThemeTime.Split(':')
+					$Sunrise = Get-Date -Hour ([int]$timeComponents[0]) -Minute ([int]$timeComponents[1]) -Second 0
+				}
+
+				elseif ($lightThemeTime -match '^\d{1,2}:\d{2}\s*[AaPp][Mm]$') {
+					# 12-hour format with AM/PM (e.g., "7:00 AM")
+					$Sunrise = [DateTime]::ParseExact($lightThemeTime.Trim(), "h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
+					$Sunrise = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunrise.Hour -Minute $Sunrise.Minute -Second 0
+				}
+
+				else {
+					# General fallback parsing
+					$Sunrise = [DateTime]::Parse($lightThemeTime)
+					$Sunrise = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunrise.Hour -Minute $Sunrise.Minute -Second 0
+				}
+        
+				# Same for sunset time
+				if ($darkThemeTime -match '^\d{1,2}:\d{2}$') {
+					$timeComponents = $darkThemeTime.Split(':')
+					$Sunset = Get-Date -Hour ([int]$timeComponents[0]) -Minute ([int]$timeComponents[1]) -Second 0
+				}
+
+				elseif ($darkThemeTime -match '^\d{1,2}:\d{2}\s*[AaPp][Mm]$') {
+					$Sunset = [DateTime]::ParseExact($darkThemeTime.Trim(), "h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
+					$Sunset = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunset.Hour -Minute $Sunset.Minute -Second 0
+				}
+
+				else {
+					$Sunset = [DateTime]::Parse($darkThemeTime)
+					$Sunset = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunset.Hour -Minute $Sunset.Minute -Second 0
+				}
+        
+				# Set tomorrow's sunrise for overnight calculations
+				$TomorrowSunrise = $Sunrise.AddDays(1)
+        
+				LogThis "Successfully parsed fixed times: Sunrise at $($Sunrise.ToString('HH:mm')), Sunset at $($Sunset.ToString('HH:mm'))" -verboseMessage $true
+			}
+
+			catch {
+
+				LogThis "Error parsing time strings. Using default values." -verboseMessage $true
+
+				# Default fallback times if parsing fails
+				$Sunrise = Get-Date -Hour 7 -Minute 0 -Second 0
+				$Sunset = Get-Date -Hour 19 -Minute 0 -Second 0
+				$TomorrowSunrise = $Sunrise.AddDays(1)
+			}
+        
+			# In fixed hours mode, we use differently named tasks
+			$SunriseTaskName = "Fixed Sunrise theme"
+			$SunsetTaskName = "Fixed Sunset theme"
+
+			# Clean up dynamic tasks if they exist
+			if (TaskExists "Sunrise theme") {
+
+				Unregister-ScheduledTask -TaskName "Sunrise theme" -Confirm:$false
+				LogThis "Removed dynamic sunrise task as we're using fixed hours" -verboseMessage $true
+			}
+			if (TaskExists "Sunset theme") {
+
+				Unregister-ScheduledTask -TaskName "Sunset theme" -Confirm:$false
+				LogThis "Removed dynamic sunset task as we're using fixed hours" -verboseMessage $true
+			}
+        
+			# Check if fixed tasks already exist - if so, we don't need to recreate them
+			$sunriseTaskExists = TaskExists $SunriseTaskName
+			$sunsetTaskExists = TaskExists $SunsetTaskName
+        
+			# Only create fixed tasks if they don't already exist
+			if (-not $sunriseTaskExists) {
+
+				CreateScheduledTask -NextTriggerTime $Sunrise -Name $SunriseTaskName
+				LogThis "Created fixed sunrise task for daily operation"
+			}
+        
+			if (-not $sunsetTaskExists) {
+
+				CreateScheduledTask -NextTriggerTime $Sunset -Name $SunsetTaskName
+				LogThis "Created fixed sunset task for daily operation" 
+			}
 
 		} else {
 
-			# go online
+			# Dynamic hours mode
+			# Remove fixed tasks if they exist
+			if (TaskExists "Fixed Sunrise theme") {
+
+				Unregister-ScheduledTask -TaskName "Fixed Sunrise theme" -Confirm:$false
+				LogThis "Removed fixed sunrise task as we're using dynamic times" -verboseMessage $true
+			}
+
+			if (TaskExists "Fixed Sunset theme") {
+
+				Unregister-ScheduledTask -TaskName "Fixed Sunset theme" -Confirm:$false
+				LogThis "Removed fixed sunset task as we're using dynamic times" -verboseMessage $true
+			}
+        
+			# Dynamic times mode - fetch from API
 			$location = LocateThis
 
-			# Extract latitude, longitude and Timezone for API call
+			# Extract latitude, longitude and timezone for API call
 			$lat = $location.Latitude
 			$lng = $location.Longitude
+			$tzid = $location.Timezone
 
 			# Either API can be used, but the first one may have faulty control over DateTime formatting
-			#$url = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng"
-			$url = "https://api.sunrisesunset.io/json?lat=$lat&lng=$lng"
-
+			$APIurl1 = "https://api.sunrise-sunset.org/json?lat=$lat&lng=$lng&date=$NowDate&tzid=$tzid"
+			$APIurl2 = "https://api.sunrisesunset.io/json?lat=$lat&lng=$lng&date=$NowDate&timezone=$tzid"
+			$url = $APIurl2
+			LogThis "Using this API call = $url" -verboseMessage $true
 
 			$Daylight = (Invoke-RestMethod $url).results
 			LogThis "Fetched daylight data string = $Daylight" -verboseMessage $true
-			
+        
 			# Parse and adjust the dates
-			#$Sunrise = [DateTime]::ParseExact($Daylight.sunrise, "h:mm:ss tt", $null)
-			#$Sunset = [DateTime]::ParseExact($Daylight.sunset, "h:mm:ss tt", $null)
-			
 			$SunriseTimeString = $Daylight.sunrise
 			$SunriseDateString = $Daylight.date
 			$SunriseString = "$SunriseTimeString $SunriseDateString"
@@ -745,99 +855,124 @@
 			$SunsetDateString = $Daylight.date
 			$SunsetString = "$SunsetTimeString $SunsetDateString"
 			$Sunset = [DateTime]::ParseExact($SunsetString, "h:mm:ss tt yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
-			
+        
 			# second query for tomorrow
 			$TomorrowDaylight = (Invoke-RestMethod "$url&date=tomorrow").results
-			
+        
 			$TomorrowSunriseTimeString = $TomorrowDaylight.sunrise
 			$TomorrowSunriseDateString = $TomorrowDaylight.date
 			$TomorrowSunriseString =  "$TomorrowSunriseTimeString $TomorrowSunriseDateString"
 			$TomorrowSunrise = [DateTime]::ParseExact($TomorrowSunriseString, "h:mm:ss tt yyyy-MM-dd", [System.Globalization.CultureInfo]::InvariantCulture)
-			LogThis "Sunrise: $Sunrise, Sunset: $Sunset, TomorrowSunrise: $TomorrowSunrise, Now: $Now" -verboseMessage $true
-
+			LogThis "Using dynamic hours: Sunrise at $Sunrise, Sunset at $Sunset, TomorrowSunrise at $TomorrowSunrise" -verboseMessage $true
+        
+			# In dynamic mode, we use standard task names
+			$SunriseTaskName = "Sunrise theme"
+			$SunsetTaskName = "Sunset theme"
 		}
 
 		# Get current theme
 		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
 
-		# Determine the mode
-		# Afer Sunrise and Before Sunset
+		# Determine if we need to change the theme based on current time
 		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
 
-			# assign name for next temporary task
-			$Name = "Sunset theme"
-
+			# It's daytime - light theme period
+			$NextTaskName = $SunsetTaskName
 			$NextTriggerTime = $Sunset
 
-			# if the Theme is already set, create temporary tasks and exit
-			if ($CurrentTheme -match $themeLight)  {
+			# If theme already set correctly, we may not need to do anything
+			if ($CurrentTheme -match $themeLight) {
+				LogThis "Light mode is already set. No theme switching needed."
+            
+				# For dynamic times, we may still need to create the next task
+				# For fixed hours, the tasks already exist (or were just created)
+				if (-not $useFixedHours) {
 
-				LogThis "Light mode is already set. No the switching needed."
-				CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
-
+					CreateScheduledTask -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+				}
 				exit
-			}			
+			}
 
+			# Apply light theme
 			If (DoWeShuffle($lightPath)) {
 
-				RandomFirstWall -wallpaperDirectory $wallLightPath	
-			}		
+				RandomFirstWall -wallpaperDirectory $wallLightPath    
+			}        
 
-			# set Light theme
-			LogThis "Setting the theme  $lightPath" -verboseMessage $true
+			# Set Light theme
+			LogThis "Setting the theme $lightPath" -verboseMessage $true
 			StartTheme -ThemePath $lightPath
 
-			# extra apps
+			# Extra apps
 			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light" }
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light"}
 
-			# logging
+			# Logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
 			ShowBurntToast -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
 
+			# For dynamic hours, create the next task
+			# For fixed hours, we already created both tasks at the beginning if needed
+			if (-not $useFixedHours) {
+
+				CreateScheduledTask -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+			}
+
 		} else {
 
+			# It's nighttime - dark theme period
 			if ($Now -ge $Sunset) {
+
 				$NextTriggerTime = $TomorrowSunrise
 
 			} else {
 
 				$NextTriggerTime = $Sunrise
 			}
+        
+			$NextTaskName = $SunriseTaskName
 
-			# assign name for next temporary task
-			$Name = "Sunrise theme"
-
-			# if the Theme is already set, create temporary tasks and exit
-			if ($CurrentTheme -match $themeDark)  {
+			# If theme already set correctly, we may not need to do anything
+			if ($CurrentTheme -match $themeDark) {
 
 				LogThis "Dark mode is already set. No theme switching needed."
-				CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
+            
+				# For dynamic times, we still need to create the next task
+				# For fixed hours, the tasks already exist (or were just created) 
+				if (-not $useFixedHours) {
 
+					CreateScheduledTask -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+				}
 				exit
-			}	
+			}
 
+			# Apply dark theme
 			If (DoWeShuffle($darkPath)) {
 
-				RandomFirstWall -wallpaperDirectory $wallDarkPath	
-			}		
-			
-			# set Dark theme
-			LogThis "Setting the theme  $darkPath" -verboseMessage $true
+				RandomFirstWall -wallpaperDirectory $wallDarkPath    
+			}        
+        
+			# Set Dark theme
+			LogThis "Setting the theme $darkPath" -verboseMessage $true
 			StartTheme -ThemePath $darkPath
 
-			# extra apps
+			# Extra apps
 			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark"}
 
-			# logging
+			# Logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
 			ShowBurntToast -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
-		}	
-	
-		# Create the next temporary task
-		CreateTemporaryTask -NextTriggerTime $NextTriggerTime -Name $Name
+
+			# For dynamic hours, create the next task
+			# For fixed hours, we already created both tasks at the beginning if needed
+			if (-not $useFixedHours) {
+
+				CreateScheduledTask -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+			}
+		}
 	}
+
 
 # ============= RUNTIME  ==============
 

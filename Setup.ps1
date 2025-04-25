@@ -62,6 +62,9 @@
 	    }		
     }
 
+
+# ============= RUNTIME  ==============
+
     Write-Host "===== Task Setup script started ====="
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     LogThis ""
