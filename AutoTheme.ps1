@@ -20,10 +20,15 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Improved the Setup process
-	- Improved auto versioning
-	- Minor fixes
+ - Fixed a problem where the script would fetch daylight times for the wrong day, depending on time zone differences. 
+ - Greatly improved efficiency when user sets fixed hours for theme switching.
+
 #>
+
+# ============= Script Version ==============
+
+	# This is automatically updated via pre-commit hook
+	$scriptVersion = "1.0.23"
 
 # ============= Config file ==============
 

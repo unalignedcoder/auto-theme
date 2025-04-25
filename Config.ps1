@@ -77,7 +77,3 @@
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
 
-# ============= Script Version ==============
-
-	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.22"
