@@ -59,7 +59,7 @@ jobs:
     # extract release notes from the script
     - name: Extract release notes from script
       run: |
-        WARNING_MESSAGE="**Careful**: edit the new `Config.ps1` before overwriting the old one."
+        WARNING_MESSAGE="**Careful**, edit the new `Config.ps1` before overwriting the old one."
         RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
         FULL_RELEASE_NOTES="$WARNING_MESSAGE\n\n$RELEASE_NOTES"
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
