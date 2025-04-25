@@ -22,7 +22,7 @@ When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the
 	<br /><sup>In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.</sup>
 3) Open the file `Config.ps1` and modify the following variables as preferred:
 
- 	![image](https://github.com/user-attachments/assets/f37353ae-1aa1-40af-b4fc-d0c7e5e1258b "All entries in the config file contain exhaustive explanations.")
+ 	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
 
 5) (optional) Run the script `Setup.ps1` to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
