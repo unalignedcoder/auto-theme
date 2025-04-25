@@ -29,7 +29,7 @@
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.24"
+	$scriptVersion = "1.0.25"
 
 # ============= Config file ==============
 
@@ -978,7 +978,6 @@
 			}
 		}
 	}
-
 
 # ============= RUNTIME  ==============
 
