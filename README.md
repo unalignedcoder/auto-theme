@@ -8,7 +8,7 @@ Rather than relying on registry/system settings, it works by activating `.theme`
 
 It is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
-It only connects to the internet to verify Location and retrieve Sunrise and Sunset times (from ip-api.com). 
+It only connects to the internet to verify Location and retrieve Sunrise and Sunset times, via free api services such as sunrisesunset.io and ip-api.com. 
 
 Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 
