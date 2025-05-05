@@ -12,7 +12,7 @@ It only connects to the internet to verify Location and retrieve Sunrise and Sun
 
 Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 
-When ran as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
+When run as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
 &nbsp;
 
