@@ -44,7 +44,7 @@ This script is designed to run from Task Scheduler, and after the initial setup 
 
 When run from terminal, using `./AutoTheme.ps1`, the script will 'toggle' the theme (switching from one `.theme` file to the other) and then exit, ignoring any scheduled event. This can be useful for testing purposes, but also for the odd times when there is need to manually switch the theme regardless of task settings. 
 
-![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/aa45e82d-9578-4446-abd8-6a1b0c6473e4 "The command can be run in terminal in verbose mode.")
+![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/5ea7e34d-4e55-4cd4-a629-73f92ef2436c "The command can be run in terminal in verbose mode.")
 <br /><sup>The command `./AutoTheme.ps1` can be run in terminal in verbose mode.</sup>
 
 For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
