@@ -8,11 +8,11 @@ Rather than relying on registry/system settings, it works by activating `.theme`
 
 It is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
-It only connects to the internet to verify Location and retrieve Sunrise and Sunset times (from ip-api.com). 
+It only connects to the internet to verify Location and retrieve Sunrise and Sunset times, via free api services such as sunrisesunset.io and ip-api.com. 
 
 Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 
-When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
+When run as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
 &nbsp;
 
@@ -29,23 +29,23 @@ When ran as the command `./AutoTheme.ps1` from terminal or desktop shortcut, the
  	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
 
-5) (optional) Run the script `Setup.ps1` to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
+5) (optional) Run the script `.\Setup.ps1`[^1] to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
 
 6) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, make sure that the Action is set up as follows:
 	- Program/script: `Powershell.exe`
 	- Add arguments: `-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\AutoTheme.ps1"`
 	- Run with highest privileges.
-<b>It is advisable to always add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out for example Slideshow customization and resulting in a hybrid "Custom" theme.</b>
+<b>It is advisable to always add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out slideshow customizations and resulting in a hybrid "Custom" theme.</b>
 
 7) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location.
 
 ## Usage
 This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user. 
 
-When run from terminal, using `./AutoTheme.ps1`, the script will 'toggle' the theme (switching from one `.theme` file to the other) and then exit, ignoring any scheduled event. This can be useful for testing purposes, but also for the odd times when there is need to manually switch the theme regardless of task settings. 
+When run from terminal, using `.\AutoTheme.ps1`[^1], the script will 'toggle' the theme (switching from one `.theme` file to the other) and then exit, ignoring any scheduled event. This can be useful for testing purposes, but also for the odd times when there is need to manually switch the theme regardless of task settings. 
 
-![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/aa45e82d-9578-4446-abd8-6a1b0c6473e4 "The command can be run in terminal in verbose mode.")
-<br /><sup>The command `./AutoTheme.ps1` can be run in terminal in verbose mode.</sup>
+![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/5ea7e34d-4e55-4cd4-a629-73f92ef2436c "The command can be run in terminal in verbose mode.")
+<br /><sup>The command `.\AutoTheme.ps1` can be run in terminal in verbose mode.</sup>
 
 For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
 
@@ -60,10 +60,10 @@ Many scripts and apps try to automate dark and light theme functionality under W
 
 This script however directly starts `.theme` files as processes (as if the user double-clicked on them), therefore letting Windows itself operate the entire visual transition, be it just the application of dark mode, or with addition of visual styles, wallpapers and more.
 
-In fact, in addition to switching light and dark themes, using `.theme` files allow to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
+In fact, in addition to switching light and dark themes, using `.theme` files allows to set different wallpaper slideshows for each theme, while including other changes such as cursors, sounds, and more, all without forcing or tricking the system into unusual behavior.
 
 All it takes are two `.theme` files (very easy to create, see Installation instructions above.)
 
-<p>&nbsp;</p>
+[^1]:  To run a PowerShell script on Windows, you need to set Execution Policy in PowerShell, using this command: `Set-ExecutionPolicy RemoteSigned` as Administrator.
 
 
