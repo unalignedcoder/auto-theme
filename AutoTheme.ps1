@@ -29,7 +29,7 @@
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.25"
+	$scriptVersion = "1.0.26"
 
 # ============= Config file ==============
 
@@ -447,6 +447,79 @@
 		}
 	}
 
+	# Restart MusicBee
+	function RestartMusicBee {
+
+		# Check if MusicBee restart is enabled
+		if (-Not $restartMusicBee) {
+			LogThis "MusicBee restart is disabled in config.ps1. Skipping." -verboseMessage $true
+			return
+		}
+
+		# Get MusicBee process (ProcessName does NOT include '.exe')
+		$MB = Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue
+
+		if ($MB) {
+
+			# Use the first process instance
+			$firstProc = $MB | Select-Object -First 1
+
+			# Try to get executable path from the Process object, fall back to WMI if needed
+			$exePath = $firstProc.Path
+			if (-not $exePath) {
+				try {
+					$procInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($firstProc.Id)" -ErrorAction Stop
+					$exePath = $procInfo.ExecutablePath
+				} catch {
+					$exePath = $null
+				}
+			}
+
+			if (-not $exePath) {
+				LogThis "Could not retrieve MusicBee executable path; will stop and attempt to restart by executable name." -verboseMessage $true
+
+				try {
+					Stop-Process -Id $firstProc.Id -Force -ErrorAction SilentlyContinue
+				} catch {
+					LogThis "Failed to stop MusicBee: $_" -verboseMessage $true
+				}
+
+				Start-Sleep -Seconds 2
+
+				try {
+					Start-Process -FilePath "MusicBee.exe" -ArgumentList "-t" -WindowStyle Minimized -ErrorAction SilentlyContinue
+					LogThis "Attempted to restart MusicBee by executable name." -verboseMessage $true
+				} catch {
+					LogThis "Failed to start MusicBee by name: $_" -verboseMessage $true
+				}
+
+				return
+			}
+
+			LogThis "Restarting MusicBee: $exePath" -verboseMessage $true
+
+			# Stop all MusicBee instances
+			try {
+				Stop-Process -Id ($MB | Select-Object -ExpandProperty Id) -Force -ErrorAction SilentlyContinue
+			} catch {
+				LogThis "Failed to stop MusicBee processes: $_" -verboseMessage $true
+			}
+
+			Start-Sleep -Seconds 2  # Ensure it has fully closed
+
+			# Restart minimized
+			try {
+				Start-Process -FilePath $exePath -ArgumentList "-t" -WindowStyle Minimized -ErrorAction SilentlyContinue
+				LogThis "MusicBee restarted successfully." -verboseMessage $true
+			} catch {
+				LogThis "Failed to restart MusicBee from path '$exePath': $_" -verboseMessage $true
+			}
+
+		} else {
+			LogThis "MusicBee is not running. No restart needed." -verboseMessage $true
+		}
+	}
+
 	# Restart Windows Explorer
 	function RestartExplorer {
 
@@ -695,6 +768,7 @@
 			# extra apps
 			if ($restartProcexp) {RestartProcessExplorer}
 			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light" }
+			if ($restartMusicBee) {RestartMusicBee}
 
 			# log it
 			LogThis "$themeLight activated"
@@ -714,6 +788,7 @@
 			# extra apps
 			if ($restartProcexp) {RestartProcessExplorer}
 			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
+			if ($restartMusicBee) {RestartMusicBee}
 
 			# log it
 			LogThis "$themeDark activated"
@@ -912,6 +987,7 @@
 			# Extra apps
 			if ($restartProcexp) {RestartProcessExplorer}
 			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light"}
+			if ($restartMusicBee) {RestartMusicBee}
 
 			# Logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
@@ -965,6 +1041,7 @@
 			# Extra apps
 			if ($restartProcexp) {RestartProcessExplorer}
 			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark"}
+			if ($restartMusicBee) {RestartMusicBee}
 
 			# Logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"

@@ -44,8 +44,8 @@
 
 	<# Paths to the folders for light and dark wallpapers.
 	(only needed if $randomFirst = true) #>
-	$wallLightPath = "Path\to\Light\wallpapers"
-	$wallDarkPath = "Path\to\Dark\wallpapers"
+	$wallLightPath = "C:\Path\to\Light\wallpapers"
+	$wallDarkPath = "C:\Path\to\Dark\wallpapers"
 
 # ============= Extra apps variables =============
 
@@ -60,7 +60,10 @@
 	$customizeTrueLaunch = $true
 	$trueLaunchIniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\setup.ini"
 
-# ============= Debug variables ==============
+	<# MusicBee will not switch theme when the theme changes, unless restarted. #>
+	$restartMusicBee = $true
+
+# ============= Advanced variables ==============
 
 	$log = $true
 	$logFromTerminal = $false
