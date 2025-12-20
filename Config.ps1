@@ -47,6 +47,9 @@
 	$wallLightPath = "C:\Path\to\Light\wallpapers"
 	$wallDarkPath = "C:\Path\to\Dark\wallpapers"
 
+	# Show the wallpaper name in notification
+	$showWallName = $true
+
 # ============= Extra apps variables =============
 
 	<# Sysinternals Process Explorer doesn't automatically change theme when

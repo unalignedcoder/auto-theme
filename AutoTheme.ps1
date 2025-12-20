@@ -20,16 +20,13 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
- - Fixed a problem where the script would fetch daylight times for the wrong day, depending on time zone differences.
-- Greatly improved efficiency when user choses fixed hours for theme switching.
-- Made changes to the auto-versioning system.
-- Minor fixes.
+ Added option to restart MusicBee when switching theme, since this program will not change theme itself.
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.26"
+	$scriptVersion = "1.0.27"
 
 # ============= Config file ==============
 
@@ -67,34 +64,31 @@
 		try {
 
 			# Only proceed if in debug mode
-			if ($log) {
+			if (-not $log) { return }
 
-				<# Check for verbosity:
-				If the message is verbose, but verbose is false, end the Function
-				If the message is verbose, but verbose is true, continue
-				If the message is not verbose, continue #>
-				if ($verboseMessage -and -not $verbose) {
+			<# Check for verbosity:
+			If the message is verbose, but verbose is false, end the Function
+			If the message is verbose, but verbose is true, continue
+			If the message is not verbose, continue #>
+			if ($verboseMessage -and -not $verbose) { return }
 
-					return  # Skip logging if message is verbose and $verbose is set to false
-				}
+			# Interactive: print to console (no prefix). Verbose messages are shown only when $verbose is true.
+			if (IsRunningFromTerminal) {
 
-				# Display log output depending on session type
-				if (IsRunningFromTerminal) {
+				Write-Host $message
 
-					Write-Output "$message" # Output to console
-					if ($logFromTerminal) {Add-Content -Path $logFile -Value "$message" }  # Log to file
-					# 
-
-				} else {
-
-					Add-Content -Path $logFile -Value "$message"  # Log to file
-
-				}
+				# Optionally also append to the log file when requested from interactive sessions
+				if ($logFromTerminal) { Add-Content -Path $logFile -Value $message }
+			}
+			else {
+				# Non-interactive: always append to log file
+				Add-Content -Path $logFile -Value $message
 			}
 
 		} catch {
 
-			Write-Output "Error in LogThis: $_"
+			# Write-Host avoids emitting pipeline output from the logger
+			Write-Host "Error in LogThis: $_"
 		}		
 	}
 	
@@ -149,7 +143,8 @@
 	# Handle BurntToast Notifications
 	function ShowBurntToast {
 		param(
-			[string]$Text,
+			# Accept either a single string or an array of strings.
+			[object]$Text,
 			[string]$AppLogo
 		)
 
@@ -172,11 +167,19 @@
 		if (Get-Module -Name BurntToast -ListAvailable) {
 
 			try {
-				
+			
 				LogThis "Creating BurnToast notification"  -verboseMessage $true
-				New-BurntToastNotification -Text $Text -AppLogo $AppLogo
 
-				LogThis "Displayed BurntToast notification with text: $Text"  -verboseMessage $true
+				# Ensure we pass either an array or a single string to New-BurntToastNotification
+				if ($Text -is [System.Array]) {
+					New-BurntToastNotification -Text $Text -AppLogo $AppLogo
+				} else {
+					New-BurntToastNotification -Text $Text -AppLogo $AppLogo
+				}
+
+				LogThis "Displayed BurntToast notification with text: $(
+					if ($Text -is [System.Array]) { ($Text -join ' | ') } else { $Text }
+				)"  -verboseMessage $true
 
 			} catch {
 
@@ -186,6 +189,22 @@
 		} else {
 
 			LogThis "BurntToast module is not installed. Cannot display system notifications."
+		}
+	}
+
+	# Prepare BurntToast notification content
+	function PrepareBurnToast {
+		param(
+			[string]$MainLine,
+			[string]$SelectedWallpaper = ""
+		)
+
+		# If user disabled showing wallpaper names, show only main line
+		if ($SelectedWallpaper -and $showWallName) {
+			# Blank line for spacing, then wallpaper line
+			ShowBurntToast -Text @($MainLine, "", "Wallpaper: $SelectedWallpaper") -AppLogo $appLogo
+		} else {
+			ShowBurntToast -Text $MainLine -AppLogo $appLogo
 		}
 	}
 
@@ -268,51 +287,146 @@
 			[string]$wallpaperDirectory
 		)
 
+		# Will return basename (no path, no extension) or empty string
+		[string]$SelectedWallpaperBasename = ""
+
+		# Removed the unhelpful "RandomFirstWall: entry" log line
+
 		if (-Not ($randomFirst)) {
 			LogThis "The first wallpaper will not be randomized."  -verboseMessage $true
-			return
+			return $SelectedWallpaperBasename
 		}
 
 		LogThis "Randomizing first wallpaper."  -verboseMessage $true
 		LogThis "Looking in $wallpaperDirectory"  -verboseMessage $true
 
-		# Retrieve all wallpaper files
-		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
+		# Build list of folders to sanitize (remove any existing _0_AutoTheme_ prefixes)
+		$dirsToSanitize = @($wallpaperDirectory)
 
-		# Ensure there are wallpapers available
-		if ($wallpapers.Count -eq 0) {
-			LogThis "No wallpapers available." -verboseMessage $true
-			return
+		# If global light/dark wallpaper paths exist and are different, include them
+		if ($null -ne $wallLightPath -and $wallLightPath -ne "" -and $wallLightPath -ne $wallpaperDirectory) {
+			$dirsToSanitize += $wallLightPath
+		}
+		if ($null -ne $wallDarkPath -and $wallDarkPath -ne "" -and $wallDarkPath -ne $wallpaperDirectory -and $wallDarkPath -ne $wallLightPath) {
+			$dirsToSanitize += $wallDarkPath
 		}
 
-		# Find all wallpapers that have '_0_AutoTheme_' prefix
-		$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^_0_AutoTheme_' }
+		# Deduplicate and filter to existing directories
+		$dirsToSanitize = $dirsToSanitize | Where-Object { $_ } | Get-Unique
 
-		# If any exist, rename them back to their original names
-		if ($existingRenamedWallpapers.Count -gt 0) {
+		foreach ($dir in $dirsToSanitize) {
 
-			foreach ($wallpaper in $existingRenamedWallpapers) {
+			if (-Not (Test-Path $dir)) {
+				LogThis "Wallpaper folder not found: $dir" -verboseMessage $true
+				continue
+			}
 
-				$originalName = $wallpaper.Name -replace '^_0_AutoTheme_', ''
-				$originalNameFull = Join-Path $wallpaperDirectory $originalName
-				
-				LogThis "Restoring original name: $($wallpaper.FullName) → $originalNameFull" -verboseMessage $true
-				Rename-Item -Path $wallpaper.FullName -NewName $originalNameFull -Force
+			# Retrieve all wallpaper files in this directory
+			$wallpapers = Get-ChildItem -Path $dir -File -ErrorAction SilentlyContinue
+			if (-not $wallpapers) {
+				LogThis "No wallpapers in $dir" -verboseMessage $true
+				continue
+			}
+
+			# Find renamed files with prefix and restore original names
+			$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^_0_AutoTheme_' }
+
+			if ($existingRenamedWallpapers.Count -gt 0) {
+
+				foreach ($wallpaper in $existingRenamedWallpapers) {
+					try {
+						$originalName = $wallpaper.Name -replace '^_0_AutoTheme_', ''
+						LogThis "Restoring original name: $($wallpaper.FullName) → $originalName" -verboseMessage $true
+						# Use only the name in -NewName to avoid path issues
+						Rename-Item -Path $wallpaper.FullName -NewName $originalName -Force -ErrorAction Stop | Out-Null
+					} catch {
+						LogThis "Failed restoring $($wallpaper.FullName): $_" -verboseMessage $true
+					}
+				}
 			}
 		}
 
-		# Refresh the list of wallpapers after renaming
-		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File
+		# Now operate on the requested target directory to pick and prefix a random wallpaper.
+		if (-Not (Test-Path $wallpaperDirectory)) {
+			LogThis "Target wallpaper directory not found: $wallpaperDirectory" -verboseMessage $true
+			return $SelectedWallpaperBasename
+		}
 
-		# Select a random wallpaper
+		# Refresh the list of wallpapers in the target folder and exclude already-prefixed files
+		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch '^_0_AutoTheme_' }
+
+		# Ensure there are wallpapers available
+		if (-Not $wallpapers -or $wallpapers.Count -eq 0) {
+			LogThis "No wallpapers available in target folder: $wallpaperDirectory" -verboseMessage $true
+			return $SelectedWallpaperBasename
+		}
+
+		# Select a random wallpaper and rename it with the prefix
 		$randomFirstWallpaper = $wallpapers | Get-Random
-
-		# Rename it with "_0_AutoTheme_" prefix
 		$newWallpaperName = "_0_AutoTheme_" + $randomFirstWallpaper.Name
-		$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
-		Rename-Item -Path $randomFirstWallpaper.FullName -NewName $newWallpaperNameFull -Force
 
-		LogThis "Renamed $($randomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
+		try {
+			Rename-Item -Path $randomFirstWallpaper.FullName -NewName $newWallpaperName -Force -ErrorAction Stop | Out-Null
+			$newWallpaperNameFull = Join-Path $wallpaperDirectory $newWallpaperName
+			LogThis "Renamed $($randomFirstWallpaper.FullName) to $newWallpaperNameFull" -verboseMessage $true
+
+			# Prepare basename (no path, no extension) to return
+			$SelectedWallpaperBasename = [System.IO.Path]::GetFileNameWithoutExtension($randomFirstWallpaper.Name)
+
+		} catch {
+			LogThis "Failed to rename $($randomFirstWallpaper.FullName): $_" -verboseMessage $true
+			$SelectedWallpaperBasename = ""
+		}
+
+		# Return only the basename string
+		return $SelectedWallpaperBasename
+	}
+
+	# Get the currently selected wallpaper's basename (no path, no extension)
+	function GetSelectedWallpaper {
+		param (
+			[string]$wallpaperDirectory,
+			[string]$themeFilePath
+		)
+
+		# Default empty
+		[string]$selected = ""
+
+		try {
+
+			# If wallpaper directory missing, bail out
+			if (-not (Test-Path $wallpaperDirectory)) {
+				LogThis "GetSelectedWallpaper: folder not found: $wallpaperDirectory" -verboseMessage $true
+				return $selected
+			}
+
+			# If theme uses slideshow shuffle, attempt RandomFirstWall (it returns basename or empty)
+			if (DoWeShuffle($themeFilePath)) {
+
+				$selected = RandomFirstWall -wallpaperDirectory $wallpaperDirectory
+
+				# Fallback to first file if RandomFirstWall didn't return a name
+				if (-not $selected) {
+					$first = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+					if ($first) { $selected = [System.IO.Path]::GetFileNameWithoutExtension($first.Name) }
+				}
+
+			} else {
+
+				# Not shuffling — pick first file by name
+				$first = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
+				if ($first) { $selected = [System.IO.Path]::GetFileNameWithoutExtension($first.Name) }
+			}
+
+		} catch {
+			LogThis "GetSelectedWallpaper error: $_" -verboseMessage $true
+			$selected = ""
+		}
+
+		# Sanitize internal prefix if present
+		if ($selected) { $selected = $selected -replace '^_0_AutoTheme_', '' }
+
+		return $selected
 	}
 
 	# Modify TrueLaunchBar default colors
@@ -389,9 +503,6 @@
 		Set-Content -Path $trueLaunchIniFilePath -Value $updatedContent -Encoding UTF8
 
 		LogThis "True Launch Bar settings updated." -verboseMessage $true
-
-		# Restart Explorer
-		RestartExplorer
 	}
 
 	# Restart the 'Themes' Service
@@ -412,6 +523,29 @@
 
 				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
 			}
+		}
+	}
+
+	# Combined function to restart apps
+	function RestartApps {
+
+		param (
+			[string]$themeMode  # "light" or "dark"
+		)
+
+		try {
+
+			# extra apps
+			if ($restartProcexp) {RestartProcessExplorer}
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode $themeMode }
+			if ($restartMusicBee) {RestartMusicBee}
+			
+			# Restart Explorer
+			RestartExplorer
+
+		} catch {
+
+			LogThis "RestartApps error: $_" -verboseMessage $true
 		}
 	}
 
@@ -756,43 +890,45 @@
 
 		if ($CurrentTheme -match "dark")  {
 
-			If (DoWeShuffle($lightPath)) {
-				RandomFirstWall -wallpaperDirectory $wallLightPath
-			}
+			# Select wallpaper basename (handles shuffle and sanitization)
+			$selectedWall = GetSelectedWallpaper -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
 
+			# log the selected theme
 			LogThis "Selected $lightPath" -verboseMessage $true
 
 			# set Light theme
 			StartTheme $lightPath
 
-			# extra apps
-			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light" }
-			if ($restartMusicBee) {RestartMusicBee}
+			# Restart configured extra apps and Explorer
+			RestartApps -themeMode "light"
 
 			# log it
 			LogThis "$themeLight activated"
-			ShowBurntToast -Text "Theme toggled. $themeLight activated." -AppLogo $appLogo
 
-		}else {
+			# Create notification
+			$mainLine = "Theme toggled. $themeLight activated."
+			PrepareBurnToast -MainLine $mainLine -SelectedWallpaper $selectedWall
 
-			If (DoWeShuffle($darkPath)) {
-				RandomFirstWall -wallpaperDirectory $wallDarkPath
-			}
+		} else {
 
+			# Select wallpaper basename (handles shuffle and sanitization)
+			$selectedWall = GetSelectedWallpaper -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
+
+			# log the selected theme
 			LogThis "Selected $darkPath" -verboseMessage $true
 
 			# set Dark theme
 			StartTheme $darkPath
 
-			# extra apps
-			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark" }
-			if ($restartMusicBee) {RestartMusicBee}
+			# Restart configured extra apps and Explorer
+			RestartApps -themeMode "dark"
 
 			# log it
 			LogThis "$themeDark activated"
-			ShowBurntToast -Text "Theme toggled. $themeDark activated." -AppLogo $appLogo
+
+			# Create notification
+			$mainLine = "Theme toggled. $themeDark activated."
+			PrepareBurnToast -MainLine $mainLine -SelectedWallpaper $selectedWall
 
 		}
 	}
@@ -804,7 +940,6 @@
 		$NowDate = $Now.ToString("yyyy-MM-dd")
 
 		if ($useFixedHours) {
-
 
 			# Parse fixed times as proper DateTime objects
 			try {
@@ -973,25 +1108,23 @@
 				}
 				exit
 			}
-
-			# Apply light theme
-			If (DoWeShuffle($lightPath)) {
-
-				RandomFirstWall -wallpaperDirectory $wallLightPath    
-			}        
+			
+			# Select wallpaper basename (handles shuffle and sanitization)
+			$selectedWall = GetSelectedWallpaper -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
 
 			# Set Light theme
 			LogThis "Setting the theme $lightPath" -verboseMessage $true
 			StartTheme -ThemePath $lightPath
 
-			# Extra apps
-			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "light"}
-			if ($restartMusicBee) {RestartMusicBee}
+			# Restart configured extra apps and Explorer
+			RestartApps -themeMode "light"
 
 			# Logging
 			LogThis "$themeLight activated. Next trigger at: $NextTriggerTime"
-			ShowBurntToast -Text "$themeLight activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
+
+			# Create notification
+			$mainLine = "$themeLight activated. Next trigger at: $NextTriggerTime"
+			PrepareBurnToast -MainLine $mainLine -SelectedWallpaper $selectedWall
 
 			# For dynamic hours, create the next task
 			# For fixed hours, we already created both tasks at the beginning if needed
@@ -1028,24 +1161,22 @@
 				exit
 			}
 
-			# Apply dark theme
-			If (DoWeShuffle($darkPath)) {
+			# Select wallpaper basename (handles shuffle and sanitization)
+			$selectedWall = GetSelectedWallpaper -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
 
-				RandomFirstWall -wallpaperDirectory $wallDarkPath    
-			}        
-        
 			# Set Dark theme
 			LogThis "Setting the theme $darkPath" -verboseMessage $true
 			StartTheme -ThemePath $darkPath
 
-			# Extra apps
-			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode "dark"}
-			if ($restartMusicBee) {RestartMusicBee}
+			# Restart configured extra apps and Explorer
+			RestartApps -themeMode "dark"
 
 			# Logging
 			LogThis "$themeDark activated. Next trigger at: $NextTriggerTime"
-			ShowBurntToast -Text "$themeDark activated. Next trigger at: $NextTriggerTime" -AppLogo $appLogo
+
+			# Create notification
+			$mainLine = "$themeDark activated. Next trigger at: $NextTriggerTime"
+			PrepareBurnToast -MainLine $mainLine -SelectedWallpaper $selectedWall
 
 			# For dynamic hours, create the next task
 			# For fixed hours, we already created both tasks at the beginning if needed
