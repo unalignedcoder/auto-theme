@@ -20,17 +20,13 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
- - Improved the renaming of random wallpapers.
-- Simplified/optimized several functions.
-- Optionally show the wallpaper filename in notifications, when the theme changes. Check my repository for a companion script that monitors all your slideshow wallpaper changes and notifies you accordingly.
-- Added MusicBee to the apps that can be optionally restarted upon theme change.
-- Minor fixes.
+ - Improved the restart of MusicBee. The script will try to gently close the app. This fails if MusicBee's window is hidden. It that case, it will force close it. Unfortunately MusicBee will not remember what it was playing in this case.
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.28"
+	$scriptVersion = "1.0.29"
 
 # ============= Config file ==============
 
@@ -433,6 +429,27 @@
 		return $selected
 	}
 
+	# Restart the 'Themes' Service
+	function RestartThemeService {
+		
+		[bool]$IsAdmin = IsAdmin
+		if ($restartThemeService -and $IsAdmin) {
+
+			try {
+
+				LogThis "Restarting the Themes service." -verboseMessage $true
+
+				Restart-Service -Name "Themes" -Force -ErrorAction SilentlyContinue
+
+				LogThis "Themes service restarted successfully." -verboseMessage $true
+
+			} catch {
+
+				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
+			}
+		}
+	}
+
 	# Modify TrueLaunchBar default colors
 	function UpdateTrueLaunch {
 
@@ -509,50 +526,6 @@
 		LogThis "True Launch Bar settings updated." -verboseMessage $true
 	}
 
-	# Restart the 'Themes' Service
-	function RestartThemeService {
-		
-		[bool]$IsAdmin = IsAdmin
-		if ($restartThemeService -and $IsAdmin) {
-
-			try {
-
-				LogThis "Restarting the Themes service." -verboseMessage $true
-
-				Restart-Service -Name "Themes" -Force -ErrorAction SilentlyContinue
-
-				LogThis "Themes service restarted successfully." -verboseMessage $true
-
-			} catch {
-
-				LogThis "Failed to restart Themes service: $_"  -verboseMessage $true
-			}
-		}
-	}
-
-	# Combined function to restart apps
-	function RestartApps {
-
-		param (
-			[string]$themeMode  # "light" or "dark"
-		)
-
-		try {
-
-			# extra apps
-			if ($restartProcexp) {RestartProcessExplorer}
-			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode $themeMode }
-			if ($restartMusicBee) {RestartMusicBee}
-			
-			# Restart Explorer
-			RestartExplorer
-
-		} catch {
-
-			LogThis "RestartApps error: $_" -verboseMessage $true
-		}
-	}
-
 	# Restart Sysinternals Process Explorer
 	function RestartProcessExplorer {
 
@@ -585,75 +558,67 @@
 		}
 	}
 
-	# Restart MusicBee
+	# Restart MusicBee. This will fail if MusicBee window is completely hidden!
 	function RestartMusicBee {
-
-		# Check if MusicBee restart is enabled
 		if (-Not $restartMusicBee) {
 			LogThis "MusicBee restart is disabled in config.ps1. Skipping." -verboseMessage $true
 			return
 		}
 
-		# Get MusicBee process (ProcessName does NOT include '.exe')
 		$MB = Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue
 
 		if ($MB) {
 
-			# Use the first process instance
 			$firstProc = $MB | Select-Object -First 1
 
-			# Try to get executable path from the Process object, fall back to WMI if needed
-			$exePath = $firstProc.Path
-			if (-not $exePath) {
-				try {
-					$procInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($firstProc.Id)" -ErrorAction Stop
-					$exePath = $procInfo.ExecutablePath
-				} catch {
-					$exePath = $null
-				}
-			}
-
-			if (-not $exePath) {
-				LogThis "Could not retrieve MusicBee executable path; will stop and attempt to restart by executable name." -verboseMessage $true
-
-				try {
-					Stop-Process -Id $firstProc.Id -Force -ErrorAction SilentlyContinue
-				} catch {
-					LogThis "Failed to stop MusicBee: $_" -verboseMessage $true
-				}
-
-				Start-Sleep -Seconds 2
-
-				try {
-					Start-Process -FilePath "MusicBee.exe" -ArgumentList "-t" -WindowStyle Minimized -ErrorAction SilentlyContinue
-					LogThis "Attempted to restart MusicBee by executable name." -verboseMessage $true
-				} catch {
-					LogThis "Failed to start MusicBee by name: $_" -verboseMessage $true
-				}
-
-				return
-			}
-
-			LogThis "Restarting MusicBee: $exePath" -verboseMessage $true
-
-			# Stop all MusicBee instances
 			try {
-				Stop-Process -Id ($MB | Select-Object -ExpandProperty Id) -Force -ErrorAction SilentlyContinue
+				$procInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($firstProc.Id)" -ErrorAction Stop
+				$exePath = $procInfo.ExecutablePath
+
 			} catch {
-				LogThis "Failed to stop MusicBee processes: $_" -verboseMessage $true
+
+				$exePath = $null
 			}
 
-			Start-Sleep -Seconds 2  # Ensure it has fully closed
+			LogThis "Requesting MusicBee to close..." -verboseMessage $true
 
-			# Restart minimized
-			try {
-				Start-Process -FilePath $exePath -ArgumentList "-t" -WindowStyle Minimized -ErrorAction SilentlyContinue
-				LogThis "MusicBee restarted successfully." -verboseMessage $true
-			} catch {
-				LogThis "Failed to restart MusicBee from path '$exePath': $_" -verboseMessage $true
+			# We don't use /F because we want a 'Gentle' close
+			taskkill.exe /IM "$($firstProc.ProcessName).exe"
+
+			$timeout = 0
+
+			# give it a little time... Check every 1s for up to 10s to ensure it's actually gone
+			while ((Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue) -and ($timeout -lt 10)) {
+
+				Start-Sleep -Seconds 1
+				$timeout++
 			}
 
+			# If still running after 10 seconds, it's likely hidden and we force kill it. Sorry!
+			if (Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue) {
+
+				LogThis "MusicBee didn't respond to gentle close. Forcing..."
+				taskkill.exe /F /IM "MusicBee.exe"
+			}
+
+			if ($exePath) {
+
+				LogThis "Restarting MusicBee: $exePath" -verboseMessage $true
+
+				try {
+
+					# -t is the MusicBee command line switch to start minimized to tray
+					Start-Process -FilePath $exePath -ErrorAction Stop
+
+					LogThis "MusicBee restarted successfully." -verboseMessage $true
+
+				} catch {
+
+					LogThis "Failed to restart MusicBee: $_" -verboseMessage $true
+				}
+			}
 		} else {
+
 			LogThis "MusicBee is not running. No restart needed." -verboseMessage $true
 		}
 	}
@@ -680,6 +645,29 @@
 		if (-Not ($explorer)) {Start-Process "explorer.exe" -ErrorAction SilentlyContinue}
 		
 		LogThis "Windows Explorer restarted." -verboseMessage $true
+	}
+
+	# Combined function to restart apps
+	function RestartApps {
+
+		param (
+			[string]$themeMode  # "light" or "dark"
+		)
+
+		try {
+
+			# extra apps
+			if ($restartProcexp) {RestartProcessExplorer}
+			if ($customizeTrueLaunch) {UpdateTrueLaunch -themeMode $themeMode }
+			if ($restartMusicBee) {RestartMusicBee}
+			
+			# Restart Explorer
+			RestartExplorer
+
+		} catch {
+
+			LogThis "RestartApps error: $_" -verboseMessage $true
+		}
 	}
 
 	# Function to check if the script is running as admin
