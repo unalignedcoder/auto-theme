@@ -34,16 +34,24 @@
 	$userLng = "-74.0060"
 	$UserTzid = "America/New_York"
 
+	<# Add or remove minutes to Sunrise and Sunset times. This can help
+	to account for local peculiarities
+	. Values can be negative,
+	for example, -30 means the event triggers 30 minutes earlier. #>
+	$sunriseOffset = 0
+	$sunsetOffset = 0
+
 	<# Randomize first wallpaper.
 	Even if 'shuffle=1' is set in a `.theme` file, Windows will always use
 	the first wallpaper in alphabetic order as the first shown.
 	Setting this to $true offers more variety as soon as the theme is applied. 
 	Be aware that, to this end, a randomly-picked wallpaper file
-	will be temporarily renamed with a "000_" string prepended to it. #>
+	will be temporarily renamed with a "0_AutoTheme" string prepended to it. #>
 	$randomFirst = $true
 
 	<# Paths to the folders for light and dark wallpapers.
-	(only needed if $randomFirst = true) #>
+	(only needed if $randomFirst = true) 
+	Use the same ones indicated in your .theme files. #>
 	$wallLightPath = "C:\Path\to\Light\wallpapers"
 	$wallDarkPath = "C:\Path\to\Dark\wallpapers"
 
@@ -56,16 +64,22 @@
 	the system theme is changed. Use this variable if you want it to be restarted.
 	If you run Process Explorer as Admin, the script should also run as Admin for this to work.
 	You can use the $forceAsAdmin variable below for the purpose. #>
-	$restartProcexp = $true
+	$restartProcexp = $false
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
 	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
-	$customizeTrueLaunch = $true
+	$customizeTrueLaunch = $false
 	$trueLaunchIniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\setup.ini"
 
-	<# MusicBee will not switch theme when the theme changes, unless restarted. #>
-	$restartMusicBee = $true
+	<# MusicBee will not switch its own theme unless restarted. #>
+	$restartMusicBee = $false
 
+	<# When T-Clock redraws the clock background based on accent color,
+	it may cause the taskbar to crash or flicker. Use this variable to
+	update T-Clock background color independently. 
+	T-Clock will be restarted when switching themes. #>
+	$tClockPath = "C:\Path\to\T-Clock\Clock64.exe"
+	$updateTClockColor = $false
 # ============= Advanced variables ==============
 
 	$log = $true
@@ -77,10 +91,11 @@
 	$checkLastRun = $true
 	$maxLogEntries = "20"
 
+	$turnOffAccentColor = $false
+
 	$restartThemeService = $false
 	$forceAsAdmin = $false
 
 	$appLogo = Join-Path $PSScriptRoot "AutoTheme.png"
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
-

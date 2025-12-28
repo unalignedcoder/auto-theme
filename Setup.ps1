@@ -36,44 +36,52 @@
     function LogThis {
 	    param (
 		    [string]$message,
-		    [bool]$verboseMessage = $false   # Default to false if not specified
+            [ValidateSet('Info', 'Success', 'Warning', 'Error')]
+            [string]$Level = 'Info',
+		    [bool]$verboseMessage = $false
 	    )
 
 	    try {
+            # Verbosity check
+            if ($verboseMessage -and -not $verbose) { return }
 
-		    # Only proceed if in debug mode
+            # Console Output using semantic streams
+            switch ($Level) {
+                'Error'   { Write-Error -Message $message -ErrorAction Continue }
+                'Warning' { Write-Warning -Message $message }
+                'Success' { Write-Information -MessageData "SUCCESS: $message" -InformationAction Continue }
+                'Info'    { Write-Information -MessageData $message -InformationAction Continue }
+            }
+
+		    # File Logging
 		    if ($log) {
-
-			    <# Check for verbosity:
-			    If the message is verbose, but verbose is false, end the Function
-			    If the message is verbose, but verbose is true, continue
-			    If the message is not verbose, continue #>
-			    if ($verboseMessage -and -not $verbose) {
-
-				    return  # Skip logging if message is verbose and $verbose is set to false
-			    }
-				    Add-Content -Path $logFile -Value "$message"  # Log to file
-			    }
-		    }
-
+                $logEntry = if ($Level -ne 'Info') { "$($Level.ToUpper()): $message" } else { $message }
+				Add-Content -Path $logFile -Value $logEntry
+			}
 	    } catch {
-
-		    Write-Output "Error in LogThis: $_"
+		    Write-Warning "Error in LogThis: $_"
 	    }		
     }
 
 
 # ============= RUNTIME  ==============
 
-    Write-Host "===== Task Setup script started ====="
+    # Include config variables
+    if (-Not (Test-Path $ConfigPath)) {
+        Write-Error "Configuration file not found: $ConfigPath"
+        Pause
+        Exit 1
+    }
+    . $ConfigPath
+
+    LogThis "===== Task Setup script started ====="
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
     LogThis ""
-    LogThis "$timestamp === Setup started (Version: $scriptVersion)"
+    LogThis "$timestamp === Setup started"
 
     # Relaunch script as admin if not already running as admin
     if (-not (Test-AdminRights)) {
-        Write-Host "This script requires administrative privileges. Requesting elevation..." -ForegroundColor Yellow
-        LogThis "This script requires administrative privileges. Requesting elevation."
+        LogThis "This script requires administrative privileges. Requesting elevation..." -Level Warning
         Start-Process -FilePath "powershell.exe" `
                       -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
                       -Verb RunAs
@@ -87,32 +95,26 @@
 
     # Check if AutoTheme.ps1 exists
     if (!(Test-Path $AutoThemeScript)) {
-        Write-Host "Error: Required script file '$AutoThemeScript' not found. Exiting setup..." -ForegroundColor Red
-        LogThis "Error: Required script file '$AutoThemeScript' not found. Exiting setup."
+        LogThis "Required script file '$AutoThemeScript' not found. Exiting setup..." -Level Error
         Pause
         Exit 1
     }
 
     # Check if the scheduled task already exists
     if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
-        Write-Host "Task '$TaskName' already exists." -ForegroundColor Yellow
-        LogThis "Task '$TaskName' already exists."
+        LogThis "Task '$TaskName' already exists." -Level Warning
         $runExistingTask = Read-Host "Would you like to run the existing task now? (Yes/No)"
         if ($runExistingTask -match '^(Yes|Y)$') {
             try {
                 # Run the task using Task Scheduler
-                Write-Host "Running the existing task via Task Scheduler..." -ForegroundColor Cyan
-                LogThis "User requested to run the existing task via Task Scheduler."
+                LogThis "Running the existing task via Task Scheduler..." -Level Success
                 Start-ScheduledTask -TaskName $TaskName
-                Write-Host "Task '$TaskName' has been triggered successfully." -ForegroundColor Cyan
-                LogThis "Task '$TaskName' has been triggered successfully."
+                LogThis "Task '$TaskName' has been triggered successfully." -Level Success
             } catch {
-                Write-Host "Failed to run the task: $_" -ForegroundColor Red
-                LogThis "Failed to run the task: $_"
+                LogThis "Failed to run the task: $_" -Level Error
             }
         } else {
-            Write-Host "You chose not to run the task. Exiting setup..." -ForegroundColor Yellow
-            LogThis "User chose not to run the task. Exiting setup."
+            LogThis "You chose not to run the task. Exiting setup..." -Level Warning
         }
         Pause
         Exit 0
@@ -146,15 +148,14 @@
     # Register the task
     $windowsVersion = Get-WindowsVersion
     if ($windowsVersion -eq "Windows 10") {
-        LogThis "Creating scheduled task for Windows 10."
+        LogThis "Creating scheduled task for Windows 10." -verboseMessage $true
         Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User "$env:USERNAME" -Action $Action -RunLevel Highest -Compatibility Win8 -Force | Out-Null
     } else {
-        LogThis "Creating scheduled task for Windows 11."
+        LogThis "Creating scheduled task for Windows 11." -verboseMessage $true
         Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -Action $Action -RunLevel Highest -Force | Out-Null
     }
 
-    Write-Host "Scheduled task '$TaskName' created successfully!" -ForegroundColor Cyan
-    LogThis "Scheduled task '$TaskName' created successfully."
+    LogThis "Scheduled task '$TaskName' created successfully!" -Level Success
 
     # Prompt the user to run the task immediately
     $runNow = Read-Host "Would you like to run the task now? (Yes/No)"
@@ -162,16 +163,12 @@
     if ($runNow -match '^(Yes|Y)$') {
         try {
             # Run the task using Task Scheduler (this simulates the task running as scheduled)
-            Write-Host "Running the task via Task Scheduler..." -ForegroundColor Cyan
-            LogThis "User requested to run the task via Task Scheduler."
+            LogThis "Running the task via Task Scheduler..." -Level Success
             Start-ScheduledTask -TaskName $TaskName
-            Write-Host "Task '$TaskName' has been triggered successfully." -ForegroundColor Cyan
-            LogThis "Task '$TaskName' has been triggered successfully."
+            LogThis "Task '$TaskName' has been triggered successfully." -Level Success
         } catch {
-            Write-Host "Failed to run the task: $_" -ForegroundColor Red
-            LogThis "Failed to run the task: $_"
+            LogThis "Failed to run the task: $_" -Level Error
         }
     } else {
-        Write-Host "You chose not to run the task. Setup is complete." -ForegroundColor Yellow
-        LogThis "User chose not to run the task. Setup is complete."
+        LogThis "You chose not to run the task. Setup is complete." -Level Warning
     }
