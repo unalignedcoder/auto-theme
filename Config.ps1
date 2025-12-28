@@ -74,10 +74,9 @@
 	<# MusicBee will not switch its own theme unless restarted. #>
 	$restartMusicBee = $false
 
-	<# When T-Clock redraws the clock background based on accent color,
-	it may cause the taskbar to crash or flicker. Use this variable to
-	update T-Clock background color independently. 
-	T-Clock will be restarted when switching themes. #>
+	<# Changes color in the T-Clock font, so that it adapts to the current theme.
+	Regarding this app, be aware that when T-Clock redraws the clock background based on accent color,
+	it may cause the taskbar to crash or flicker. Better avoid it. #>
 	$tClockPath = "C:\Path\to\T-Clock\Clock64.exe"
 	$updateTClockColor = $false
 # ============= Advanced variables ==============
