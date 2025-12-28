@@ -20,13 +20,15 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
- - Improved the restart of MusicBee. The script will try to gently close the app. This fails if MusicBee's window is hidden. It that case, it will force close it. Unfortunately MusicBee will not remember what it was playing in this case.
+	Added T-Clock to extra apps and Fixed theme switching issues with it.
+	Changed function names to appease PS standards. Sigh.
+	Several minor improvements and fixes.
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.31"
+	$scriptVersion = "1.0.32"
 
 # ============= Config file ==============
 
@@ -1376,4 +1378,5 @@
 
 		Write-Log "Error: $_"
 	}
+
 
