@@ -21,10 +21,11 @@ When run as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 2) Create custom **Light** and **Dark** themes. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
+   (`.theme` files conatin simple instructions for the Windows pesonalization engine. You can find two examples of included in this repository, with helpful comments.)
 
 	![image](https://github.com/user-attachments/assets/0999c082-16ec-456c-ba58-88783bc1abb3 "In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.")
 	<br /><sup>In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.</sup>
-3) Open the file `Config.ps1` and modify the following variables as preferred:
+4) Open the file `Config.ps1` and modify the following variables as preferred:
 
  	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
