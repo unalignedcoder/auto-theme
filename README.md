@@ -54,7 +54,7 @@ For convenience, a shortcut to the script can be created and placed on the deskt
 <br /><sup>A Windows shortcut can be created to directly toggle the theme.</sup>
 
 ## Extra apps
-Workarounds have been added for a couple of apps which do not toggle theme gracefully when the system theme changes: **TrueLaunchBar** and **ProcessExplorer**. More apps can be added if there is demand. More details in the Config file.
+Workarounds have been added for a number of apps which do not toggle theme gracefully when the system theme changes. More details in the Config file.
 
 ## The forgotten benefits of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by directly modifying system behavior, incurring in many difficulties and potential compatibility problems for the user.
