@@ -20,15 +20,14 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	Added T-Clock to extra apps and Fixed theme switching issues with it.
-	Changed function names to appease PS standards. Sigh.
-	Several minor improvements and fixes.
+	Corrected a problem with Taskbar colorization
+	Improved variables in config file
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.32"
+	$scriptVersion = "1.0.33"
 
 # ============= Config file ==============
 
@@ -900,9 +899,6 @@
 			[string]$ThemePath
 			)
 		
-		# Turn off the accent color in taskbar usage. Debug feature. See config for more.
-		if ($turnOffAccentColor) { Disable-TaskbarAccent -State "Off" } else { Disable-TaskbarAccent -State "On" }
-		
 		# Check if the theme file exists
 		if (Test-Path $ThemePath) {
 
@@ -913,6 +909,9 @@
 
 			# Wait a bit for the theme to apply and the Settings window to appear
 			Start-Sleep -Seconds 4
+			
+			# Turn off or on the accent color in taskbar usage. Debug feature.
+			if ($turnOffAccentColor) { Disable-TaskbarAccent -State "Off" } else { Disable-TaskbarAccent -State "On" }
 
 			Write-Log "Closing the Settings window" -verboseMessage $true
 
@@ -1378,5 +1377,6 @@
 
 		Write-Log "Error: $_"
 	}
+
 
 

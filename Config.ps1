@@ -79,7 +79,8 @@
 	it may cause the taskbar to crash or flicker. Better avoid it. #>
 	$tClockPath = "C:\Path\to\T-Clock\Clock64.exe"
 	$updateTClockColor = $false
-# ============= Advanced variables ==============
+
+# ============= Developer variables ==============
 
 	$log = $true
 	$logFromTerminal = $false
@@ -90,6 +91,7 @@
 	$checkLastRun = $true
 	$maxLogEntries = "20"
 
+	# Turn this off if you have surge issues when switching theme or wallpaper
 	$turnOffAccentColor = $false
 
 	$restartThemeService = $false
