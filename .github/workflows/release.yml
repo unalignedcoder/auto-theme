@@ -6,7 +6,7 @@ name: Create Release
 on:
   push:
     branches:
-      - main # name of the main branch goes here
+      - main
 
 permissions:
   contents: write

@@ -100,3 +100,9 @@
 	$appLogo = Join-Path $PSScriptRoot "AutoTheme.png"
 	$logFile = Join-Path $PSScriptRoot "AutoTheme.log"
 	$lastRunFile = Join-Path $PSScriptRoot "ATLastRun.txt"
+	
+	# Console Visibility Settings when run from Task Scheduler
+	# "ch" 		  - Completely hidden (no flash) using conhost --headless
+	# "ps"        - Standard PowerShell window (may flash briefly)
+	# "wt"        - Opens in Windows Terminal (using existing window if open)
+	$terminalVisibility = "ch"

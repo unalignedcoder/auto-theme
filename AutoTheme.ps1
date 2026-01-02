@@ -20,14 +20,14 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	Corrected a problem with Taskbar colorization
-	Improved variables in config file
+	- Added logic to completely hide the console window when ran from Scheduler, or use Windows Terminal
+	- Fixed an issue with user identity spoofing when creating Scheduled Tasks, in main and setup scripts
 #>
 
 # ============= Script Version ==============
 
-	# This is automatically updated via pre-commit hook
-	$scriptVersion = "1.0.33"
+	# This is automatically updated
+	$scriptVersion = "1.0.34"
 
 # ============= Config file ==============
 
@@ -713,26 +713,26 @@
 		# Attempt 1: The "Polite" Request (CloseMainWindow)
         # This sends a close signal (like clicking 'X'), giving Explorer time to save state 
         # and notify background tasks (preventing the surge).
-        $explorerProc = Get-Process -Name explorer -ErrorAction SilentlyContinue
+        # $explorerProc = Get-Process -Name explorer -ErrorAction SilentlyContinue
         
-        if ($explorerProc) {
-            foreach ($proc in $explorerProc) {
-                # This is the magic command missing from the previous snippet
-                $proc.CloseMainWindow() | Out-Null
-            }
+        # if ($explorerProc) {
+        #     foreach ($proc in $explorerProc) {
+        #         # This is the magic command missing from the previous snippet
+        #         $proc.CloseMainWindow() | Out-Null
+        #     }
 
-            # Wait up to 5 seconds for it to close gracefully
-            $timeout = 0
-            while ((Get-Process -Name explorer -ErrorAction SilentlyContinue) -and ($timeout -lt 5)) {
-                Start-Sleep -Seconds 1
-                $timeout++
-            }
-        }
+        #     # Wait up to 5 seconds for it to close gracefully
+        #     $timeout = 0
+        #     while ((Get-Process -Name explorer -ErrorAction SilentlyContinue) -and ($timeout -lt 5)) {
+        #         Start-Sleep -Seconds 1
+        #         $timeout++
+        #     }
+        # }
 
 		# Attempt 2: The "Hard" Kill (Only if it stuck)
         # If it's still running after 5 seconds, it's hung, so we force kill it.
         if (Get-Process -Name explorer -ErrorAction SilentlyContinue) {
-            Write-Log "Explorer did not close gracefully. Forcing close..." -verboseMessage $true
+            #Write-Log "Explorer did not close gracefully. Forcing close..." -verboseMessage $true
             Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
         }
         
@@ -783,26 +783,28 @@
 	}
 
 	# Run script as Administrator
-	function Invoke-AsAdmin {
+    function Invoke-AsAdmin {
 
-		[bool]$IsAdmin = Test-IsAdmin
+        [bool]$IsAdmin = Test-IsAdmin
 
-		# Skip elevation if running as SYSTEM user
-		if ($env:SYSTEMROOT -and $env:USERNAME -eq "SYSTEM") {
-			Write-Log "Running as SYSTEM via Task Scheduler. Skipping elevation check." -verboseMessage $true
-			return
-		}
+        # Skip elevation if running as SYSTEM user
+        # IMPROVEMENT: Check SID instead of $env:USERNAME for reliability
+        $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        if ($currentIdentity.User.Value -eq "S-1-5-18") {
+            Write-Log "Running as SYSTEM via Task Scheduler. Skipping elevation check." -verboseMessage $true
+            return
+        }
 
-		# Relaunch script as admin if not already running as admin
-		if (-Not ($IsAdmin)) {
+        # Relaunch script as admin if not already running as admin
+        if (-Not ($IsAdmin)) {
 
-			Write-Host "This script requires administrative privileges. Requesting elevation..." -ForegroundColor Yellow
-			Start-Process -FilePath "powershell.exe" `
-						  -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
-						  -Verb RunAs
-			Exit 0
-		}
-	}
+            Write-Host "This script requires administrative privileges. Requesting elevation..." -ForegroundColor Yellow
+            Start-Process -FilePath "powershell.exe" `
+                          -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+                          -Verb RunAs
+            Exit 0
+        }
+    }
 
 	# Return coordinates for Sunrise API (may require Internet connectivity)
 	function Get-Geolocation {
@@ -938,62 +940,98 @@
 	}
 
 	<# Create a scheduled task for next daylight events
-	This task will be created or overwritten by the main task. #>
-	function Register-Task {
-		param (
-			[DateTime]$NextTriggerTime,
-			[String]$Name
-		)
+    This task will be created or overwritten by the main task. #>
+    function Register-Task {
+        param (
+            [DateTime]$NextTriggerTime,
+            [String]$Name
+        )
     
-		# Schedule next run
-		Write-Log "Setting scheduled task: $Name"
-		$arguments = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
-		$fullCommand = "PowerShell.exe $arguments"
-		Write-Log "Full Command: $fullCommand" -verboseMessage $true
+        # Schedule next run
+        Write-Log "Setting scheduled task: $Name"
+        
+        # Define base PowerShell arguments
+        $psArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$PSCommandPath`""
+        
+        # Logic to determine the executable and arguments based on $terminalVisibility
+        switch ($terminalVisibility) {
+            "ch" {
+                Write-Log "Visibility mode: Invisible (conhost --headless)"
+                $exe = "conhost.exe"
+                $arguments = "--headless PowerShell.exe $psArgs"
+            }
+            "wt" {
+                if (Get-Command "wt.exe" -ErrorAction SilentlyContinue) {
+                    Write-Log "Visibility mode: Windows Terminal"
+                    $exe = "wt.exe"
+                    $arguments = "-w 0 nt PowerShell.exe $psArgs"
+                } else {
+                    Write-Log "Warning: Windows Terminal not found. Falling back to PowerShell."
+                    $exe = "PowerShell.exe"
+                    $arguments = $psArgs
+                }
+            }
+            "ps" {
+                Write-Log "Visibility mode: PowerShell Console"
+                $exe = "PowerShell.exe"
+                $arguments = $psArgs
+            }
+            Default {
+                Write-Log "Visibility mode: Unknown ($terminalVisibility). Defaulting to PowerShell Console."
+                $exe = "PowerShell.exe"
+                $arguments = $psArgs
+            }
+        }
 
-		Write-Log "Creating scheduled task action..." -verboseMessage $true
-		$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arguments
+        $fullCommand = "$exe $arguments"
+        Write-Log "Full Command: $fullCommand" -verboseMessage $true
 
-		# Different trigger depending on if we're using fixed hours
-		if ($useFixedHours -and ($Name -eq "Fixed Sunrise theme" -or $Name -eq "Fixed Sunset theme")) {
+        Write-Log "Creating scheduled task action..." -verboseMessage $true
+        # Use the dynamic $exe and $arguments variables here
+        $action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
 
-			# For fixed hours, create a daily trigger at the specific time
-			$timeOfDay = $NextTriggerTime.ToString("HH:mm")
-			$trigger = New-ScheduledTaskTrigger -Daily -At $timeOfDay
-			Write-Log "Created daily trigger for $timeOfDay" -verboseMessage $true
+        # Different trigger depending on if we're using fixed hours
+        if ($useFixedHours -and ($Name -eq "Fixed Sunrise theme" -or $Name -eq "Fixed Sunset theme")) {
 
-		} else {
+            # For fixed hours, create a daily trigger at the specific time
+            $timeOfDay = $NextTriggerTime.ToString("HH:mm")
+            $trigger = New-ScheduledTaskTrigger -Daily -At $timeOfDay
+            Write-Log "Created daily trigger for $timeOfDay" -verboseMessage $true
 
-			# For dynamic times, create a one-time trigger
-			$trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-			Write-Log "Created one-time trigger for $NextTriggerTime" -verboseMessage $true
-		}
+        } else {
+
+            # For dynamic times, create a one-time trigger
+            $trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
+            Write-Log "Created one-time trigger for $NextTriggerTime" -verboseMessage $true
+        }
     
-		$userSid = $env:USERNAME
-		$principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
-		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8
+        # $userSid = $env:USERNAME deprecated method
+		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		$userSid = $currentUser.User.Value
+        $principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
+        $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8
 
-		$task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
-		Write-Log "Scheduled task action created." -verboseMessage $true
+        $task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
+        Write-Log "Scheduled task action created." -verboseMessage $true
 
-		# Unregister the old task if it exists
-		if (Test-IfTaskExists $Name) {
+        # Unregister the old task if it exists
+        if (Test-IfTaskExists $Name) {
 
-			Unregister-ScheduledTask -TaskName $Name -Confirm:$false
-			Write-Log "Unregistered existing task: $Name" -verboseMessage $true
-		}
+            Unregister-ScheduledTask -TaskName $Name -Confirm:$false
+            Write-Log "Unregistered existing task: $Name" -verboseMessage $true
+        }
 
-		# Register the new task
-		try {
+        # Register the new task
+        try {
 
-			Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
-			Write-Log "Registered new task: $Name"
+            Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
+            Write-Log "Registered new task: $Name"
 
-		} catch {
+        } catch {
 
-			Write-Log "Error registering task: $_"
-		}    
-	}
+            Write-Log "Error registering task: $_"
+        }    
+    }
 
 	<# Main function: Toggle the theme when running from Terminal
 	using the command `./AutoTheme.ps1` #>
@@ -1377,6 +1415,7 @@
 
 		Write-Log "Error: $_"
 	}
+
 
 
 

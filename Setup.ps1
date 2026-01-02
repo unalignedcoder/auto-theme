@@ -9,7 +9,7 @@
 
 # ============= Config file ==============
 
-	$ConfigPath = Join-Path $PSScriptRoot "Config.ps1"
+    $ConfigPath = Join-Path $PSScriptRoot "Config.ps1"
 
 # ============= FUNCTIONS  ==============
 
@@ -34,14 +34,14 @@
 
     # Create the logging system
     function LogThis {
-	    param (
-		    [string]$message,
+        param (
+            [string]$message,
             [ValidateSet('Info', 'Success', 'Warning', 'Error')]
             [string]$Level = 'Info',
-		    [bool]$verboseMessage = $false
-	    )
+            [bool]$verboseMessage = $false
+        )
 
-	    try {
+        try {
             # Verbosity check
             if ($verboseMessage -and -not $verbose) { return }
 
@@ -53,14 +53,14 @@
                 'Info'    { Write-Information -MessageData $message -InformationAction Continue }
             }
 
-		    # File Logging
-		    if ($log) {
+            # File Logging
+            if ($log) {
                 $logEntry = if ($Level -ne 'Info') { "$($Level.ToUpper()): $message" } else { $message }
-				Add-Content -Path $logFile -Value $logEntry
-			}
-	    } catch {
-		    Write-Warning "Error in LogThis: $_"
-	    }		
+                Add-Content -Path $logFile -Value $logEntry
+            }
+        } catch {
+            Write-Warning "Error in LogThis: $_"
+        }       
     }
 
 
@@ -79,13 +79,14 @@
     LogThis ""
     LogThis "$timestamp === Setup started"
 
-    # Relaunch script as admin if not already running as admin
+# Relaunch script as admin if not already running as admin
     if (-not (Test-AdminRights)) {
         LogThis "This script requires administrative privileges. Requesting elevation..." -Level Warning
-        Start-Process -FilePath "powershell.exe" `
+        # -NoProfile to ensure a clean environment during elevation
+        $proc = Start-Process -FilePath "powershell.exe" `
                       -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
-                      -Verb RunAs
-        Pause
+                      -Verb RunAs -PassThru
+        # Exit the non-elevated instance
         Exit 0
     }
 
@@ -126,8 +127,10 @@
     $LogonTrigger = New-ScheduledTaskTrigger -AtLogOn
     $startupTrigger = New-ScheduledTaskTrigger -AtStartup
 
-    <# Create the Unlock Trigger using CIM, Thanks to
-    https://stackoverflow.com/questions/53704188/syntax-for-execute-on-workstation-unlock #>
+    # IMPROVEMENT: Use the Current User's SID for the Unlock Trigger to prevent "User not found" errors
+    $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $userSid = $currentUser.User.Value
+
     $StateChangeTrigger = Get-CimClass `
         -Namespace ROOT\Microsoft\Windows\TaskScheduler `
         -ClassName MSFT_TaskSessionStateChangeTrigger
@@ -136,26 +139,65 @@
         -CimClass $StateChangeTrigger `
         -Property @{
             StateChange = 8  # 8 = TASK_SESSION_UNLOCK
-            UserId = "$env:USERNAME"
+            UserId = $userSid # Using SID instead of Username string
         } `
         -ClientOnly
 
     $Triggers = @($LogonTrigger, $startupTrigger, $UnlockTrigger)
 
+    # --- Terminal Visibility Logic ---
+    $psArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
+    
+    switch ($terminalVisibility) {
+        "ch" {
+            LogThis "Visibility mode: Invisible (conhost --headless)"
+            $exe = "conhost.exe"
+            $arguments = "--headless PowerShell.exe $psArgs"
+        }
+        "wt" {
+            if (Get-Command "wt.exe" -ErrorAction SilentlyContinue) {
+                LogThis "Visibility mode: Windows Terminal"
+                $exe = "wt.exe"
+                $arguments = "-w 0 nt PowerShell.exe $psArgs"
+            } else {
+                LogThis "Warning: wt.exe not found. Falling back to default (ps) mode." -Level Warning
+                $exe = "PowerShell.exe"
+                $arguments = $psArgs
+            }
+        }
+        default {
+            LogThis "Visibility mode: PowerShell Console"
+            $exe = "PowerShell.exe"
+            $arguments = $psArgs
+        }
+    }
+
+    # IMPROVEMENT: Task Settings for Laptops
+    # Tasks default to "Stop if on battery." We need to disable that for theme switching.
+    $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+
     # Create the action
-    $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -File `"$AutoThemeScript`""
+    $Action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
 
     # Register the task
     $windowsVersion = Get-WindowsVersion
-    if ($windowsVersion -eq "Windows 10") {
-        LogThis "Creating scheduled task for Windows 10." -verboseMessage $true
-        Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User "$env:USERNAME" -Action $Action -RunLevel Highest -Compatibility Win8 -Force | Out-Null
-    } else {
-        LogThis "Creating scheduled task for Windows 11." -verboseMessage $true
-        Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -Action $Action -RunLevel Highest -Force | Out-Null
+    
+    try {
+        # Using -User $userSid ensures the task is tied to the correct account context
+        if ($windowsVersion -eq "Windows 10") {
+            LogThis "Creating scheduled task for Windows 10." -verboseMessage $true
+            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -RunLevel Highest -Compatibility Win8 -Force | Out-Null
+        } else {
+            LogThis "Creating scheduled task for Windows 11." -verboseMessage $true
+            # Added $Settings here too
+            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -RunLevel Highest -Force | Out-Null
+        }
+        LogThis "Scheduled task '$TaskName' created successfully!" -Level Success
+    } catch {
+        LogThis "Critical error registering task: $_" -Level Error
+        Pause
+        Exit 1
     }
-
-    LogThis "Scheduled task '$TaskName' created successfully!" -Level Success
 
     # Prompt the user to run the task immediately
     $runNow = Read-Host "Would you like to run the task now? (Yes/No)"
