@@ -14,10 +14,6 @@ Alternatively, it can stay completely offline operating on fixed hours provided 
 
 When run as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
 
-&nbsp;
-
-<p align=center>Why, thank you for asking!<br />👉 You can donate to this project <a href="https://www.buymeacoffee.com/unalignedcoder" target="_blank" title="buymeacoffee.com">here</a>👈</p>
-
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 2) Create custom **Light** and **Dark** themes. To do so, simply modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme.
@@ -25,7 +21,7 @@ When run as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the
 
 	![image](https://github.com/user-attachments/assets/0999c082-16ec-456c-ba58-88783bc1abb3 "In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.")
 	<br /><sup>In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.</sup>
-4) Open the file `Config.ps1` and modify the following variables as preferred:
+4) Open the file `Config.ps1` and modify variables as preferred:
 
  	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
@@ -36,7 +32,7 @@ When run as the command `.\AutoTheme.ps1` from terminal or desktop shortcut, the
 	- Program/script: `Powershell.exe`
 	- Add arguments: `-WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\AutoTheme.ps1"`
 	- Run with highest privileges.
-<b>It is advisable to always add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out slideshow customizations and resulting in a hybrid "Custom" theme.</b>
+<b>It is advisable to always add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out slideshow customizations and resulting in a hybrid "Custom" theme.</b> The tasks can run the script in a completely hidden manner, or in a visible way, per user choice.
 
 7) When triggered, the task will then run the script `AutoTheme.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location.
 
@@ -55,6 +51,10 @@ For convenience, a shortcut to the script can be created and placed on the deskt
 
 ## Extra apps
 Workarounds have been added for a number of apps which do not toggle theme gracefully when the system theme changes. More details in the Config file.
+
+&nbsp;
+
+<p align=center>Why, thank you for asking!<br />👉 You can donate to all my projects <a href="https://www.buymeacoffee.com/unalignedcoder" target="_blank" title="buymeacoffee.com">here</a>👈</p>
 
 ## The forgotten benefits of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by directly modifying system behavior, incurring in many difficulties and potential compatibility problems for the user.
