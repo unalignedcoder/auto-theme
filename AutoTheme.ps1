@@ -21,13 +21,14 @@
 
 .NOTES
 	- Added logic to completely hide the console window when ran from Scheduler, or use Windows Terminal
-	- Fixed an issue with user identity spoofing when creating Scheduled Tasks, in main and setup scripts
+	- Fixed an issue with possible user identity spoofing when creating Scheduled Tasks, in main and setup scripts
+	- Scheduked Tasks are now created with battery settings to avoid the script being blocked on laptops
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.34"
+	$scriptVersion = "1.0.35"
 
 # ============= Config file ==============
 
@@ -1009,7 +1010,7 @@
 		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
 		$userSid = $currentUser.User.Value
         $principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
-        $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8
+        $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8 -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
         $task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
         Write-Log "Scheduled task action created." -verboseMessage $true

@@ -3,8 +3,14 @@
     Initial Setup script for Auto Theme.
 
 .DESCRIPTION
-    Sets up the Auto Theme script and scheduled task if not already configured. 
+    Creates the initial Scheduled Task for the script AutoTheme. 
     Automatically requests admin privileges if not run as admin.
+
+.LINK
+	https://github.com/unalignedcoder/auto-theme/
+
+.NOTES
+    - See main script file for latest changes.
 #>
 
 # ============= Config file ==============
