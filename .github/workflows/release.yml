@@ -56,12 +56,19 @@ jobs:
         git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
         git push origin "v$NEW_VERSION"
 
-    # extract release notes from the script
+    # extract release notes from the script .NOTES section
     - name: Extract release notes from script
       run: |
-        WARNING_MESSAGE="(Don't forget to edit the new Config.ps1 file before overwriting the old one.)"
-        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d')
+        # Add 4 spaces to the start of the warning so it creates a code block too
+        WARNING_MESSAGE="    (Make sure to edit the new Config.ps1 file before overwriting the old one.)"
+        
+        # 1. Capture block. 2. Remove first/last line. 
+        # 3. Regex: Capture leading spaces (\1), match the hyphen/space, replace with just the leading spaces.
+        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d' | sed -E 's/^([[:space:]]*)-[[:space:]]*/\1/')
+        
+        # Combine them. 
         FULL_RELEASE_NOTES="$(printf "%s\n\n%s" "$RELEASE_NOTES" "$WARNING_MESSAGE")"
+        
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
         echo "$FULL_RELEASE_NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV

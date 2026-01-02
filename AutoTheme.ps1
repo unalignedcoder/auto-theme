@@ -28,7 +28,7 @@
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.35"
+	$scriptVersion = "1.0.36"
 
 # ============= Config file ==============
 
@@ -1416,6 +1416,7 @@
 
 		Write-Log "Error: $_"
 	}
+
 
 
 
