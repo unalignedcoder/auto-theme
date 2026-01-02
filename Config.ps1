@@ -65,6 +65,9 @@
 	If you run Process Explorer as Admin, the script should also run as Admin for this to work.
 	You can use the $forceAsAdmin variable below for the purpose. #>
 	$restartProcexp = $false
+	# If true, Process Explorer will keep Admin rights (inheriting from this script).
+	# If false, it will be restarted as a standard user. All other apps are restarted as standard user.
+	$restartProcexpElevated = $true
 
 	<# Change TrueLaunchBar colors (will cause Explorer to be restarted)
 	Look into the 'Update-TrueLaunchBar-colors' function for more details #>

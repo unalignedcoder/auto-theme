@@ -23,12 +23,13 @@
 	- Added logic to completely hide the console window when ran from Scheduler, or use Windows Terminal
 	- Fixed an issue with possible user identity spoofing when creating Scheduled Tasks, in main and setup scripts
 	- Scheduked Tasks are now created with battery settings to avoid the script being blocked on laptops
+	- Added logic to control elevation privileges of restarted apps.
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.36"
+	$scriptVersion = "1.0.37"
 
 # ============= Config file ==============
 
@@ -433,6 +434,23 @@
 		return $selected
 	}
 
+	# Helper to launch processes without admin privileges
+    function Start-ProcessUnelevated {
+        param (
+            [string]$FilePath,
+            [string]$ArgumentList = ""
+        )
+        try {
+            <# Use the Shell COM object to ask the standard user desktop shell 
+            to launch the process for us, bypassing the script's Admin token. #>
+            $shell = New-Object -ComObject Shell.Application
+            $shell.ShellExecute($FilePath, $ArgumentList, "", "open", 1)
+            Write-Log "Launched unelevated: $FilePath" -verboseMessage $true
+        } catch {
+            Write-Log "Failed to launch unelevated ($FilePath): $_"
+        }
+    }
+
 	# Restart the 'Themes' Service
 	function Restart-ThemeService {
 		
@@ -598,10 +616,10 @@
 			Start-Sleep -Milliseconds 250
 			
 			if ($tClockPath) {
-				Start-Process -FilePath $tClockPath
+				Start-ProcessUnelevated -FilePath $tClockPath
 			} else {
 				# Try to restart from the path of the process we just killed
-				Start-Process -FilePath $proc.Path
+				Start-ProcessUnelevated -FilePath $proc.Path
 			}
 		} elseif ($tClockPath) {
 			Start-Process -FilePath $tClockPath
@@ -632,8 +650,26 @@
 			Start-Sleep -Seconds 2  # Ensure it has fully closed
 
 			# Restart minimized
-			Start-Process -FilePath $exePath -ArgumentList "-t" -WindowStyle Minimized
 
+			if ($restartProcexpElevated) {
+
+				Start-Process -FilePath $exePath -ArgumentList "-t" -WindowStyle Minimized
+				Write-Log "Started Process Explorer with elevated rights." -verboseMessage $true
+
+			} else {
+				
+				<# If not elevated, we close and restart via COM. 
+				Note: We manually handle the pathing here since Restart-ProcessExplorer uses Start-Process. #>
+				$proc = Get-Process | Where-Object { $_.ProcessName -match "procexp(64)?" }
+				if ($proc) {
+					$exePath = ($proc | Select-Object -First 1).Path
+					Stop-Process -Id $proc.Id -Force
+					Start-Sleep -Seconds 2
+					Start-ProcessUnelevated -FilePath $exePath -ArgumentList "-t"
+				}
+				
+				Write-Log "Started Process Explorer without elevated rights." -verboseMessage $true
+			}
 
 		} else {
 			Write-Log "Process Explorer is not running. No restart needed." -verboseMessage $true
@@ -686,7 +722,7 @@
 				try {
 
 					# -t is the MusicBee command line switch to start minimized to tray
-					Start-Process -FilePath $exePath -ErrorAction Stop
+					Start-ProcessUnelevated -FilePath $exePath -ErrorAction Stop
 
 					Write-Log "MusicBee restarted successfully." -verboseMessage $true
 
@@ -746,7 +782,7 @@
 		$explorer = Get-Process | Where-Object { $_.ProcessName -eq "explorer" } -ErrorAction SilentlyContinue
 
 		# Start if it hasn't already started (avoids new window)
-		if (-Not ($explorer)) {Start-Process "explorer.exe" -ErrorAction SilentlyContinue}
+		if (-Not ($explorer)) {Start-ProcessUnelevated "explorer.exe" -ErrorAction SilentlyContinue}
 		
 		Write-Log "Windows Explorer restarted." -verboseMessage $true
 	}
@@ -1416,8 +1452,4 @@
 
 		Write-Log "Error: $_"
 	}
-
-
-
-
 
