@@ -56,6 +56,8 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 <p align=center>Why, thank you for asking!<br />👉 You can donate to all my projects <a href="https://www.buymeacoffee.com/unalignedcoder" target="_blank" title="buymeacoffee.com">here</a>👈</p>
 
+&nbsp;
+
 ## The forgotten benefits of using `.theme` files
 Many scripts and apps try to automate dark and light theme functionality under Windows 10/11, but they do so by directly modifying system behavior, incurring in many difficulties and potential compatibility problems for the user.
 
