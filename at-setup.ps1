@@ -90,17 +90,17 @@
         LogThis "This script requires administrative privileges. Requesting elevation..." -Level Warning
         # -NoProfile to ensure a clean environment during elevation
         $proc = Start-Process -FilePath "powershell.exe" `
-                      -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
-                      -Verb RunAs -PassThru
+                    -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+                    -Verb RunAs -PassThru
         # Exit the non-elevated instance
         Exit 0
     }
 
-    # Define the path to the AutoTheme.ps1 script and task XML file
-    $AutoThemeScript = Join-Path -Path $PSScriptRoot -ChildPath "AutoTheme.ps1"
+    # Define the path to the at.ps1 script and task XML file
+    $AutoThemeScript = Join-Path -Path $PSScriptRoot -ChildPath "at.ps1"
     $TaskName = "Auto Theme"
 
-    # Check if AutoTheme.ps1 exists
+    # Check if at.ps1 exists
     if (!(Test-Path $AutoThemeScript)) {
         LogThis "Required script file '$AutoThemeScript' not found. Exiting setup..." -Level Error
         Pause

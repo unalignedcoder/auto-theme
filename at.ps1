@@ -13,7 +13,7 @@
 	Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 	When ran as the command `./at.ps1` from terminal or desktop shortcut, the script will only toggle between themes.
 	IMPORTANT: Edit `Config.ps1` to configure this script. The file contains all necessary explanations.
-	OPTIONALLY: Run `./Setup.ps1` to create the main Scheduled Task, or create one manually in Task Scheduler.
+	OPTIONALLY: Run `./setup.ps1` to create the main Scheduled Task, or create one manually in Task Scheduler.
 	For more information, refer to the README file.
 
 .LINK
@@ -21,7 +21,7 @@
 
 .NOTES
 	- MAJOR UPDATE: 
-	- Added a native system to load Dark or Light modes and randomize wallpapers. `.theme` files can still be used, see config file
+	- Added a native system to load Dark or Light modes and randomize wallpapers. Though `.theme` files can still be used, see config file
     - Renamed the script "at.ps1" for consistency with my other "short-named" projects.
     - Added a "wrapper" script (`AutoTheme.ps1`) for compatibility with older tasks and existing shortcuts.
 	- Fixed a problem with the script not recognizing it was running from Task Scheduler
@@ -32,11 +32,11 @@
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.38"
+	$scriptVersion = "1.0.39"
 
 # ============= Config file ==============
 
-	$ConfigPath = Join-Path $PSScriptRoot "Config.ps1"
+	$ConfigPath = Join-Path $PSScriptRoot "config.ps1"
 
 # ============= Win32 API Definitions ==============
 
@@ -881,9 +881,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
         if (-Not ($IsAdmin)) {
 
             Write-Host "This script requires administrative privileges. Requesting elevation..." -ForegroundColor Yellow
-            Start-Process -FilePath "powershell.exe" `
-                          -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
-                          -Verb RunAs
+            Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
             Exit 0
         }
     }
@@ -1632,5 +1630,6 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 		Write-Log "Error: $_"
 	}
+
 
 
