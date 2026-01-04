@@ -32,7 +32,7 @@ jobs:
     - name: Extract version from script
       id: extract_version
       run: |
-        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' AutoTheme.ps1)
+        NEW_VERSION=$(grep -Po '(?<=\$scriptVersion = ")([0-9]+\.[0-9]+\.[0-9]+)' at.ps1)
         echo "New version: $NEW_VERSION"
         echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
@@ -64,7 +64,7 @@ jobs:
         
         # 1. Capture block. 2. Remove first/last line. 
         # 3. Regex: Capture leading spaces (\1), match the hyphen/space, replace with just the leading spaces.
-        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' AutoTheme.ps1 | sed '1d;$d' | sed -E 's/^([[:space:]]*)-[[:space:]]*/\1/')
+        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' at.ps1 | sed '1d;$d' | sed -E 's/^([[:space:]]*)-[[:space:]]*/\1/')
         
         # Combine them. 
         FULL_RELEASE_NOTES="$(printf "%s\n\n%s" "$RELEASE_NOTES" "$WARNING_MESSAGE")"
@@ -77,7 +77,7 @@ jobs:
     - name: Zip files
       run: |
         mkdir -p release
-        cp AutoTheme.ps1 Config.ps1 Setup.ps1 AutoTheme.png LICENSE README.md release/
+        cp at.ps1 Config.ps1 Setup.ps1 AutoTheme.png LICENSE README.md release/
         zip -r release-v$NEW_VERSION.zip release/
         echo "ZIP_FILE=release-v$NEW_VERSION.zip" >> $GITHUB_ENV
 

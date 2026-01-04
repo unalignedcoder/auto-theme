@@ -82,6 +82,7 @@
 	it may cause the taskbar to crash or flicker. Better avoid it. #>
 	$tClockPath = "C:\Path\to\T-Clock\Clock64.exe"
 	$updateTClockColor = $false
+	$restartTClockColor = $false
 
 # ============= Developer variables ==============
 
