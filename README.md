@@ -20,7 +20,7 @@ When run as the command `.\at.ps1` from terminal or desktop shortcut, the script
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 
 2) Open the `at-config.ps1` file and modify variables as preferred:
-
+	
  	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
 	
