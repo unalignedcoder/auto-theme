@@ -19,7 +19,7 @@ When run as the command `.\at.ps1` from terminal or desktop shortcut, the script
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 
-2) Open the `Config.ps1` file and modify variables as preferred:
+2) Open the `at-config.ps1` file and modify variables as preferred:
 
  	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
@@ -31,7 +31,7 @@ When run as the command `.\at.ps1` from terminal or desktop shortcut, the script
 	<br /><sup>In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.</sup>
 	- Indicate the paths to the `.theme files` in the config file
 
-4) (optional) Run the script `.\Setup.ps1`[^2] to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
+4) (optional) Run the script `.\at-setup.ps1`[^2] to create the main scheduled task. The script will ask for system privileges if not run as admin, and then proceed to create the "Auto Theme" task. 
 
 6) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, make sure that the Action is set up as follows:
 	- Program/script: `Powershell.exe`
