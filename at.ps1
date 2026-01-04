@@ -8,7 +8,7 @@
 	It can also activate given `.theme` files, which may allow for a higher degree of customization and compatibility.
 	The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 	It will automatically create the next temporary task for the next daylight event.
-	Such tasks ("Sunrise theme" and "Sunset theme") will be overwritten as a matter of course to avoid clutter.
+	Such tasks ("Auto Theme sunrise" and "Auto Theme sunset") will be overwritten as a matter of course to avoid clutter.
 	It only connects to the internet to verify Location and Sunrise and Sunset times.
 	Alternatively, it can stay completely offline operating on fixed hours provided by the user.
 	When ran as the command `./at.ps1` from terminal or desktop shortcut, the script will only toggle between themes.
@@ -20,23 +20,26 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- MAJOR UPDATE: 
-	- Added a native system to load Dark or Light modes and randomize wallpapers. Though `.theme` files can still be used, see config file
+	- MAJOR UPDATE:
+	- Added a native system to load Dark or Light modes and randomize wallpapers. `.theme` files can still be used, see readme file
     - Renamed the script "at.ps1" for consistency with my other "short-named" projects.
+	- Changed the names of the generated tasks, make sure you delete the old ones in Task Scheduler.
     - Added a "wrapper" script (`AutoTheme.ps1`) for compatibility with older tasks and existing shortcuts.
+	- Added a worker script (`at-wallpaper.ps1`) to handle the wallpaper slideshow natively via Task Scheduler.
 	- Fixed a problem with the script not recognizing it was running from Task Scheduler
 	- Improved geolocation
-	- Many minor fixes
+	- Removed the MusicBee restart option, as not really helpful
+	- Several minor fixes
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.39"
+	$scriptVersion = "1.0.40"
 
 # ============= Config file ==============
 
-	$ConfigPath = Join-Path $PSScriptRoot "config.ps1"
+	$ConfigPath = Join-Path $PSScriptRoot "at-config.ps1"
 
 # ============= Win32 API Definitions ==============
 
@@ -153,7 +156,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		# Find the indices of all session start lines
 		$sessionStartIndices = @()
 		for ($i = 0; $i -lt $logLines.Count; $i++) {
-			if ($logLines[$i] -match '=== Script started \(Version: .*?\)') {
+			if ($logLines[$i] -match '=== Auto-Theme script started \(Version: .*?\)') {
 				$sessionStartIndices += $i
 			}
 		}
@@ -281,7 +284,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 			[string]$themeFilePath
 		)
 
-		Write-Log "Checking if the theme shuffles wallpapers" -verboseMessage $true
+		Write-Log "Checking if the .theme file shuffles wallpapers" -verboseMessage $true
 
 		# Read the content of the theme file
 		$themeContent = Get-Content -Path $themeFilePath
@@ -301,6 +304,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 			# If we are inside the [Slideshow] section, look for 'shuffle' setting
 			if ($inSlideshowSection) {
+
 				if ($line -match '(?i)shuffle=(\d)') { # Case-insensitive match for 'shuffle'
 					Write-Log "Found shuffle setting: $line" -verboseMessage $true
 					return $matches[1] -eq '1'
@@ -315,11 +319,11 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		}
 
 		# If no shuffle setting is found, return false
-		Write-Log "No, the theme does not shuffle wallpapers" -verboseMessage $true
+		Write-Log "No, the .theme file does not." -verboseMessage $true
 		return $false
 	}
 
-	<# Prepend the substring '_0_AutoTheme_' to one randomly chosen
+	<# Prepend the substring '_0_at_' to one randomly chosen
 	wallpaper filename, so as to make it first pick. #>
 	function Get-RandomFirstWall {
 		param (
@@ -339,7 +343,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		Write-Log "Randomizing first wallpaper."  -verboseMessage $true
 		Write-Log "Looking in $wallpaperDirectory"  -verboseMessage $true
 
-		# Build list of folders to sanitize (remove any existing _0_AutoTheme_ prefixes)
+		# Build list of folders to sanitize (remove any existing _0_at_ prefixes)
 		$dirsToSanitize = @($wallpaperDirectory)
 
 		# If global light/dark wallpaper paths exist and are different, include them
@@ -368,13 +372,13 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 			}
 
 			# Find renamed files with prefix and restore original names
-			$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^_0_AutoTheme_' }
+			$existingRenamedWallpapers = $wallpapers | Where-Object { $_.Name -match '^_0_at_' }
 
 			if ($existingRenamedWallpapers.Count -gt 0) {
 
 				foreach ($wallpaper in $existingRenamedWallpapers) {
 					try {
-						$originalName = $wallpaper.Name -replace '^_0_AutoTheme_', ''
+						$originalName = $wallpaper.Name -replace '^_0_at_', ''
 						Write-Log "Restoring original name: $($wallpaper.FullName) Ã¢â€ â€™ $originalName" -verboseMessage $true
 						# Use only the name in -NewName to avoid path issues
 						Rename-Item -Path $wallpaper.FullName -NewName $originalName -Force -ErrorAction Stop | Out-Null
@@ -392,7 +396,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		}
 
 		# Refresh the list of wallpapers in the target folder and exclude already-prefixed files
-		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch '^_0_AutoTheme_' }
+		$wallpapers = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch '^_0_at_' }
 
 		# Ensure there are wallpapers available
 		if (-Not $wallpapers -or $wallpapers.Count -eq 0) {
@@ -402,7 +406,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 		# Select a random wallpaper and rename it with the prefix
 		$randomFirstWallpaper = $wallpapers | Get-Random
-		$newWallpaperName = "_0_AutoTheme_" + $randomFirstWallpaper.Name
+		$newWallpaperName = "_0_at_" + $randomFirstWallpaper.Name
 
 		try {
 			Rename-Item -Path $randomFirstWallpaper.FullName -NewName $newWallpaperName -Force -ErrorAction Stop | Out-Null
@@ -423,49 +427,118 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 	# Get the currently selected wallpaper's basename (no path, no extension)
 	function Get-WallpaperName {
+        param (
+            [string]$wallpaperDirectory,
+            [string]$themeFilePath
+        )
+
+		if ([string]::IsNullOrWhiteSpace($wallpaperDirectory)) {
+            Write-Log "Get-WallpaperName: wallpaperDirectory is null or empty." -verboseMessage $true
+            return ""
+        }
+
+        [string]$selected = ""
+
+        try {
+
+			# return empty string if wallpaper path is not found
+            if (-not (Test-Path $wallpaperDirectory)) { return $selected }
+
+            # If theme uses shuffle, use the "Rename Trick" to force a random start
+            if ($useThemeFiles -and (Test-DoWeShuffle -themeFilePath $themeFilePath)) {
+
+                $selected = Get-RandomFirstWall -wallpaperDirectory $wallpaperDirectory
+
+            }
+
+            # Fallback (or if static): Just get the first file alphabetically
+            if (-not $selected) {
+
+                $first = Get-ChildItem -Path $wallpaperDirectory -File | Sort-Object Name | Select-Object -First 1
+                if ($first) { $selected = [System.IO.Path]::GetFileNameWithoutExtension($first.Name) }
+            }
+
+        } catch {
+            Write-Log "Get-WallpaperName error: $_"
+        }
+
+        if ($selected) { $selected = $selected -replace '^_0_at_', '' }
+
+        return $selected
+    }
+
+	# Handles the creation and management of the native wallpaper slideshow task
+	function Set-WallpaperRotationTask {
 		param (
-			[string]$wallpaperDirectory,
-			[string]$themeFilePath
+			[string]$Mode # "light" or "dark"
 		)
 
-		# Default empty
-		[string]$selected = ""
+		# 1. Clean up old task and exit if rotation is not needed
+		$TaskName = "AutoTheme Wallpaper Changer"
+		$wallPathToPass = if ($Mode -eq "light") { $wallLightPath } else { $wallDarkPath }
 
-		try {
+		# --- THE LOGIC CHECK ---
+		# We check if the path is a folder. If it's a fixed file, we don't need a rotation task.
+		$isFolder = Test-Path $wallPathToPass -PathType Container
 
-			# If wallpaper directory missing, bail out
-			if (-not (Test-Path $wallpaperDirectory)) {
-				Write-Log "Get-WallpaperName: folder not found: $wallpaperDirectory" -verboseMessage $true
-				return $selected
+		if ($useThemeFiles -or $slideShowInterval -le 0 -or $noWallpaperChange -or -not $isFolder) {
+			if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
+				Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+				Write-Log "Wallpaper rotation not needed (Fixed image or disabled). Removed task." -verboseMessage $true
 			}
-
-			# If theme uses slideshow shuffle, attempt Get-RandomFirstWall (it returns basename or empty)
-			if (Test-DoWeShuffle($themeFilePath)) {
-
-				$selected = Get-RandomFirstWall -wallpaperDirectory $wallpaperDirectory
-
-				# Fallback to first file if Get-RandomFirstWall didn't return a name
-				if (-not $selected) {
-					$first = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
-					if ($first) { $selected = [System.IO.Path]::GetFileNameWithoutExtension($first.Name) }
-				}
-
-			} else {
-
-				# Not shuffling Ã¢â‚¬â€ pick first file by name
-				$first = Get-ChildItem -Path $wallpaperDirectory -File -ErrorAction SilentlyContinue | Sort-Object Name | Select-Object -First 1
-				if ($first) { $selected = [System.IO.Path]::GetFileNameWithoutExtension($first.Name) }
-			}
-
-		} catch {
-			Write-Log "Get-WallpaperName error: $_" -verboseMessage $true
-			$selected = ""
+			return
 		}
 
-		# Sanitize internal prefix if present
-		if ($selected) { $selected = $selected -replace '^_0_AutoTheme_', '' }
+		# 2. Verify worker script exists
+		$workerScript = Join-Path $PSScriptRoot "at-wallpaper.ps1"
+		if (-not (Test-Path $workerScript)) {
+			Write-Log "Error: Worker script not found at $workerScript. Cannot schedule rotation."
+			return
+		}
 
-		return $selected
+		# 3. Build the command string respecting terminalVisibility
+		$psArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -NonInteractive -File `"$workerScript`" -Path `"$wallPathToPass`""
+
+		switch ($terminalVisibility) {
+			"ch" {
+				$exe = "conhost.exe"
+				$arguments = "--headless PowerShell.exe $psArgs"
+			}
+			"wt" {
+				if (Get-Command "wt.exe" -ErrorAction SilentlyContinue) {
+					$exe = "wt.exe"
+					$arguments = "-w 0 nt PowerShell.exe -NoLogo $psArgs"
+				} else {
+					$exe = "PowerShell.exe"
+					$arguments = $psArgs
+				}
+			}
+			Default {
+				$exe = "PowerShell.exe"
+				$arguments = $psArgs
+			}
+		}
+
+		# 4. Define Action and Trigger
+		$action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
+
+		# IMPROVEMENT: Use .AddMinutes() for clarity and set the first run to 1 interval in the future.
+		# This prevents the task from "firing" immediately after theme toggle.
+		$triggerTime = (Get-Date).AddMinutes([int]$slideShowInterval)
+		$repetition = New-TimeSpan -Minutes ([int]$slideShowInterval)
+		$trigger = New-ScheduledTaskTrigger -Once -At $triggerTime -RepetitionInterval $repetition
+
+		# 5. Register/Overwrite the task
+		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+		$principal = New-ScheduledTaskPrincipal -UserId $currentUser.User.Value -LogonType Interactive -RunLevel Highest
+		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+
+		try {
+			Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+			Write-Log "Native Slideshow scheduled: Every $slideShowInterval minutes using $Mode wallpapers."
+		} catch {
+			Write-Log "Failed to register wallpaper rotation task: $_"
+		}
 	}
 
 	# Helper to launch processes without admin privileges
@@ -721,67 +794,6 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		}
 	}
 
-	# Restart MusicBee. This will fail if MusicBee window is completely hidden!
-	function Restart-MusicBee {
-
-		$MB = Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue
-
-		if ($MB) {
-
-			$firstProc = $MB | Select-Object -First 1
-
-			try {
-				$procInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($firstProc.Id)" -ErrorAction Stop
-				$exePath = $procInfo.ExecutablePath
-
-			} catch {
-
-				$exePath = $null
-			}
-
-			Write-Log "Requesting MusicBee to close..." -verboseMessage $true
-
-			# We don't use /F because we want a 'Gentle' close
-			taskkill.exe /IM "$($firstProc.ProcessName).exe"
-
-			$timeout = 0
-
-			# give it a little time... Check every 1s for up to 10s to ensure it's actually gone
-			while ((Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue) -and ($timeout -lt 10)) {
-
-				Start-Sleep -Seconds 1
-				$timeout++
-			}
-
-			# If still running after 10 seconds, it's likely hidden and we force kill it. Sorry!
-			if (Get-Process -Name "MusicBee" -ErrorAction SilentlyContinue) {
-
-				Write-Log "MusicBee didn't respond to gentle close. Forcing..."
-				taskkill.exe /F /IM "MusicBee.exe"
-			}
-
-			if ($exePath) {
-
-				Write-Log "Restarting MusicBee: $exePath" -verboseMessage $true
-
-				try {
-
-					# -t is the MusicBee command line switch to start minimized to tray
-					Start-ProcessUnelevated -FilePath $exePath -ErrorAction Stop
-
-					Write-Log "MusicBee restarted successfully." -verboseMessage $true
-
-				} catch {
-
-					Write-Log "Failed to restart MusicBee: $_" -verboseMessage $true
-				}
-			}
-		} else {
-
-			Write-Log "MusicBee is not running. No restart needed." -verboseMessage $true
-		}
-	}
-
 	# Restart Windows Explorer
 	function Restart-Explorer {
 
@@ -918,10 +930,10 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
             Add-Type -AssemblyName 'Windows.Devices.Geolocation'
             $geolocator = New-Object Windows.Devices.Geolocation.Geolocator
-            
+
             # Start the async operation
             $asyncOp = $geolocator.GetGeopositionAsync()
-            
+
             # Wait for completion with a 5-second timeout to prevent hanging
             $counter = 0
             while ($asyncOp.Status -eq 'Started' -and $counter -lt 50) {
@@ -982,7 +994,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
         }
     }
 
-	# Debug function. Turn off accent color in taskbar. This is called by the Start-Theme function.
+	# Debug function. Turn off accent color in taskbar. This is called by the Set-ThemeFile function.
 	function Disable-TaskbarAccent {
 		param (
 			[ValidateSet("On","Off")]
@@ -995,86 +1007,30 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "ColorPrevalence" -Value $value -Force
 	}
 
-	# Helper to notify Windows that a system setting (like Theme) has changed
-    function Update-WindowsUI {
+	# Sets the system color mode directly via registry and refreshes the UI
+	function Set-ThemeMode {
 
-		Write-Log "Broadcasting WM_SETTINGCHANGE to all windows." -verboseMessage $true
-        $result = [IntPtr]::Zero
-        # Sending "ImmersiveColorSet" specifically refreshes the taskbar and modern UI colors
-        [WinAPI]::SendMessageTimeout(0xffff, 0x001A, [IntPtr]::Zero, "ImmersiveColorSet", 0x0002, 5000, [ref]$result)
-
-    }
-
-    # Bridge function to handle the Native logic
-	function Set-NativeTheme {
-        param (
-            [string]$Mode # "light" or "dark"
-        )
-
-        # 1. Always switch the theme mode colors
-        Set-ThemeMode -Mode $Mode
-
-        # 2. Handle Wallpaper only if not blocked
-        if (-not $noWallpaperChange) {
-
-            # Infer the path based on the mode provided
-            $TargetWallPath = if ($Mode -eq "light") { $wallLightPath } else { $wallDarkPath }
-
-            if ($TargetWallPath) {
-                Set-NativeWallpaper -WallpaperPath $TargetWallPath
-            } else {
-                Write-Log "Wallpaper change requested but path variable is empty." -verboseMessage $true
-            }
-
-        } else {
-            Write-Log "Wallpaper change skipped per user config." -verboseMessage $true
-        }
-    }
-
-	# Sets the system color mode directly via registry
-    function Set-ThemeMode {
-
-		param ([string]$Mode)
+        param ([string]$Mode)
 
         $value = if ($Mode -eq "light") { 1 } else { 0 }
         $path = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
 
         Write-Log "Setting native $Mode mode via registry." -verboseMessage $true
-        Set-ItemProperty -Path $path -Name "SystemUsesLightTheme" -Value $value -Force
-        Set-ItemProperty -Path $path -Name "AppsUseLightTheme" -Value $value -Force
 
-        # Force the UI to update immediately
-        Update-WindowsUI
-    }
+		# Applying Registry values
+        Set-ItemProperty -Path $path -Name "SystemUsesLightTheme" -Value $value -Force | Out-Null
+        Set-ItemProperty -Path $path -Name "AppsUseLightTheme" -Value $value -Force | Out-Null
 
-# Sets the wallpaper (handles slideshow/shuffle logic)
-    function Set-NativeWallpaper {
-        param (
-            [string]$WallpaperPath
-        )
+		# Telling Windows to make the changes
+        Write-Log "Broadcasting WM_SETTINGCHANGE to all windows." -verboseMessage $true
+        $result = [IntPtr]::Zero
 
-        if (-not (Test-Path $WallpaperPath)) {
-            Write-Log "Wallpaper path not found: $WallpaperPath"
-            return
-        }
-
-        $targetFile = $WallpaperPath
-
-        # If it's a directory, pick a random file (Slideshow/Shuffle logic)
-        if (Test-Path $WallpaperPath -PathType Container) {
-            $files = Get-ChildItem -Path $WallpaperPath -File | Where-Object { $_.Extension -match "jpg|jpeg|png|bmp" }
-            if ($files) {
-                $targetFile = ($files | Get-Random).FullName
-            }
-        }
-
-        Write-Log "Applying native wallpaper: $targetFile" -verboseMessage $true
-
-        [WinAPI]::SystemParametersInfo(0x0014, 0, $targetFile, 0x01 -bor 0x02)
+        # Catch the return value in $null to prevent "1" from appearing in logs
+        $null = [WinAPI]::SendMessageTimeout(0xffff, 0x001A, [IntPtr]::Zero, "ImmersiveColorSet", 0x0002, 5000, [ref]$result)
     }
 
 	# Run the .theme file
-	function Start-Theme {
+	function Set-ThemeFile {
 		param (
 			[string]$ThemePath
 			)
@@ -1169,7 +1125,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
         $action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
 
         # Different trigger depending on if we're using fixed hours
-        if ($useFixedHours -and ($Name -eq "Fixed Sunrise theme" -or $Name -eq "Fixed Sunset theme")) {
+        if ($useFixedHours -and ($Name -eq "Auto Theme fixed sunrise" -or $Name -eq "Auto Theme fixed sunset")) {
 
             # For fixed hours, create a daily trigger at the specific time
             $timeOfDay = $NextTriggerTime.ToString("HH:mm")
@@ -1217,70 +1173,68 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 	using the command `./at.ps1` #>
 	function Switch-Theme {
 
-		# Get current theme
-		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
+		# Determine current state
+        if ($useThemeFiles) {
 
-		if ($CurrentTheme -match "dark") {
-
-			$mode = "light";
-
-			# Select wallpaper basename (for notification)
-			$selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
-
-			# Two ways to generate the theme: via .theme files or Native method
-			if ($useThemeFiles) {
-
-				# log the selected theme
-				Write-Log "Selected $themeLight" -verboseMessage $true
-
-				Start-Theme $lightPath
-
-			} else {
-
-				# log the selected theme
-				Write-Log "Applying $mode mode" -verboseMessage $true
-
-				Set-NativeTheme -Mode $mode
-
-			}
-
-			# we will use this in a moment
-			$label = $themeLight
+			# Check the active .theme file name
+            $CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
+            $isCurrentlyDark = $CurrentTheme -match "dark"
 
         } else {
 
-            $mode = "dark";
+            # Check the "AppsUseLightTheme" value (0 = Dark, 1 = Light)
+            $RegPath = "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+            $isCurrentlyDark = (Get-ItemProperty -Path $RegPath -Name "AppsUseLightTheme").AppsUseLightTheme -eq 0
 
-			# Select wallpaper basename (for notification)
-			$selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
-
-			# Two ways to generate the theme: via .theme files or Native method
-			if ($useThemeFiles) {
-
-				# log the selected theme
-				Write-Log "Selected $themeDark" -verboseMessage $true
-
-				Start-Theme $darkPath
-
-			} else {
-
-				# log the selected theme
-				Write-Log "Applying $mode mode" -verboseMessage $true
-
-				Set-NativeTheme -Mode $mode
-			}
-
-			# we will use this in a moment
-			$label = $themeDark
         }
 
-		# Restart configured extra apps and Explorer
-		Update-Apps -themeMode $mode
+        # Toggle labels
+        if ($isCurrentlyDark) {
 
-		# Create notification
-		Send-ThemeNotification -MainLine "Theme toggled. $label activated." -SelectedWallpaper $selectedWall
+            $mode = "light"
+            $label = $themeLight # Or "Light Mode" if $themeLight is null
+            $targetPath = $lightPath
+            $wallPath = $wallLightPath
 
-	}
+        } else {
+
+            $mode = "dark"
+            $label = $themeDark
+            $targetPath = $darkPath
+            $wallPath = $wallDarkPath
+
+        }
+
+		# Apply the change
+        if ($useThemeFiles) {
+
+            Write-Log "Selected $label" -verboseMessage $true
+
+			# Set the wallpaper, grab its name
+			$selectedWall = Get-WallpaperName -wallpaperDirectory $wallPath -themeFilePath $targetPath
+
+            Set-ThemeFile $targetPath
+
+        } else {
+
+            Write-Log "Applying $mode mode" -verboseMessage $true
+
+			# Set the wallpaper, grab its name
+			$selectedWall = & $workerPath -Path $wallPath -InformationAction Continue
+
+            Set-ThemeMode -Mode $Mode
+
+			# Start rotating wallpapers via task
+			Set-WallpaperRotationTask -Mode $mode
+        }
+
+        # Update programs
+        Update-Apps -themeMode $mode
+
+		# Send notification
+        Send-ThemeNotification -MainLine "Theme toggled. $label activated." # -SelectedWallpaper $selectedWall
+
+    }
 
 	<# Calculate daylight events or pick fixed hours
 	then select the Theme depending on daylight #>
@@ -1288,7 +1242,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 		$Now = Get-Date
 		$NowDate = $Now.ToString("yyyy-MM-dd")
 
-		# Pick times
+		# Picked times mode
 		if ($useFixedHours) {
 
 			# Parse fixed times as proper DateTime objects
@@ -1346,18 +1300,18 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 			}
 
 			# In fixed hours mode, we use differently named tasks
-			$SunriseTaskName = "Fixed Sunrise theme"
-			$SunsetTaskName = "Fixed Sunset theme"
+			$SunriseTaskName = "Auto Theme fixed sunrise"
+			$SunsetTaskName = "Auto Theme fixed sunset"
 
 			# Clean up dynamic tasks if they exist
-			if (Test-IfTaskExists "Sunrise theme") {
+			if (Test-IfTaskExists "Auto Theme sunrise") {
 
-				Unregister-ScheduledTask -TaskName "Sunrise theme" -Confirm:$false
+				Unregister-ScheduledTask -TaskName "Auto Theme sunrise" -Confirm:$false
 				Write-Log "Removed dynamic sunrise task as we're using fixed hours" -verboseMessage $true
 			}
-			if (Test-IfTaskExists "Sunset theme") {
+			if (Test-IfTaskExists "Auto Theme sunset") {
 
-				Unregister-ScheduledTask -TaskName "Sunset theme" -Confirm:$false
+				Unregister-ScheduledTask -TaskName "Auto Theme sunset" -Confirm:$false
 				Write-Log "Removed dynamic sunset task as we're using fixed hours" -verboseMessage $true
 			}
 
@@ -1378,19 +1332,18 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 				Write-Log "Created fixed sunset task for daily operation"
 			}
 
+		# Dynamic hours mode
 		} else {
 
-			# Dynamic hours mode
 			# Remove fixed tasks if they exist
-			if (Test-IfTaskExists "Fixed Sunrise theme") {
+			if (Test-IfTaskExists "Auto Theme fixed sunrise") {
 
-				Unregister-ScheduledTask -TaskName "Fixed Sunrise theme" -Confirm:$false
+				Unregister-ScheduledTask -TaskName "Auto Theme fixed sunrise" -Confirm:$false
 				Write-Log "Removed fixed sunrise task as we're using dynamic times" -verboseMessage $true
 			}
 
-			if (Test-IfTaskExists "Fixed Sunset theme") {
-
-				Unregister-ScheduledTask -TaskName "Fixed Sunset theme" -Confirm:$false
+			if (Test-IfTaskExists "Auto Theme fixed sunset") {
+				Unregister-ScheduledTask -TaskName "Auto Theme fixed sunset" -Confirm:$false
 				Write-Log "Removed fixed sunset task as we're using dynamic times" -verboseMessage $true
 			}
 
@@ -1445,129 +1398,160 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 			Write-Log "Using dynamic hours: Sunrise at $Sunrise, Sunset at $Sunset, TomorrowSunrise at $TomorrowSunrise" -verboseMessage $true
 
 			# In dynamic mode, we use standard task names
-			$SunriseTaskName = "Sunrise theme"
-			$SunsetTaskName = "Sunset theme"
+			$SunriseTaskName = "Auto Theme sunrise"
+			$SunsetTaskName = "Auto Theme sunset"
 		}
 
-		# Get current theme
-		$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
+		# Determine current theme/mode state based on configuration
+        if ($useThemeFiles) {
 
-		# Determine if we need to change the theme based on current time
-		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
+            $CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
 
-			# It's daytime - light theme period
-			$NextTaskName = $SunsetTaskName
-			$NextTriggerTime = $Sunset
+        } else {
 
-			$mode = "light"
+            $RegPath = "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+            $NativeValue = (Get-ItemProperty -Path $RegPath -Name "AppsUseLightTheme").AppsUseLightTheme
+        }
 
-			# If theme already set correctly, we may not need to do anything
-			if ($CurrentTheme -match $themeLight) {
-				Write-Log "Light mode is already set. No theme switching needed."
+        # Determine if we need to change the theme based on current time
+        if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
 
-				# For dynamic times, we may still need to create the next task
-				# For fixed hours, the tasks already exist (or were just created)
-				if (-not $useFixedHours) {
+            # It's daytime - light theme period
+            $NextTriggerTime = $Sunset
+            $NextTaskName = $SunsetTaskName
+            $mode = "light"
 
-					Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+            # Check if mode is already correct
+            if ($useThemeFiles) {
+
+                if ($CurrentTheme -match $themeLight) {
+
+					Write-Log "$themeLight is already set. No theme switching needed."
+					if (-not $useFixedHours) {
+
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+					}
+					exit
 				}
-				exit
-			}
-
-			# Select wallpaper basename (handles shuffle and sanitization)
-			$selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
-
-			if ($useThemeFiles) {
 
                 Write-Log "Setting the theme $themeLight" -verboseMessage $true
-                Start-Theme -ThemePath $lightPath
-				$mainLine = "$themeLight activated. Next trigger at: $NextTriggerTime"
+
+				# Set the wallpaper, grab its name
+				$selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
+
+				# Change the theme
+                Set-ThemeFile -ThemePath $lightPath
+
+				# line for log and notification
+                $mainLine = "$themeLight activated. Next trigger at: $NextTriggerTime"
 
             } else {
 
-				Write-Log "Applying $mode mode" -verboseMessage $true
-                Set-NativeTheme -Mode $mode
-				$mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
-            }
+                if ($NativeValue -eq 1) {
 
-			# Restart configured extra apps and Explorer
-			Update-Apps -themeMode $mode
+					Write-Log "Light mode is already set. No theme switching needed."
+					if (-not $useFixedHours) {
 
-			# Logging
-			Write-Log $mainLine
-
-			# Create notification
-			Send-ThemeNotification -MainLine $mainLine -SelectedWallpaper $selectedWall
-
-			# For dynamic hours, create the next task
-			# For fixed hours, we already created both tasks at the beginning if needed
-			if (-not $useFixedHours) {
-
-				Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
-			}
-
-		} else {
-
-			# It's nighttime - dark theme period
-			if ($Now -ge $Sunset) {
-
-				$NextTriggerTime = $TomorrowSunrise
-
-			} else {
-
-				$NextTriggerTime = $Sunrise
-			}
-
-			$NextTaskName = $SunriseTaskName
-
-			$mode = "dark"
-
-			# If theme already set correctly, we may not need to do anything
-			if ($CurrentTheme -match $themeDark) {
-
-				Write-Log "Dark mode is already set. No theme switching needed."
-
-				# For dynamic times, we still need to create the next task
-				# For fixed hours, the tasks already exist (or were just created)
-				if (-not $useFixedHours) {
-
-					Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+					}
+					exit
 				}
-				exit
-			}
 
-			# Select wallpaper basename (handles shuffle and sanitization)
-			$selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
+                Write-Log "Applying $mode mode" -verboseMessage $true
 
-			if ($useThemeFiles) {
+				# Set the wallpaper, grab its name
+				$selectedWall = & $workerPath -Path $wallLightPath -InformationAction Continue
 
-                Write-Log "Setting the theme $darkPath" -verboseMessage $true
-                Start-Theme -ThemePath $darkPath
-				$mainLine = "$themeDark activated. Next trigger at: $NextTriggerTime"
+				# Change the mode
+                Set-ThemeMode -Mode $Mode
+
+				# Start rotating wallpapers via task
+				Set-WallpaperRotationTask -Mode $mode
+
+				# line for log and notification
+                $mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
+            }
+
+            Update-Apps -themeMode $mode
+            Write-Log $mainLine
+
+			# Send notification
+            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
+			# Register the task
+            if (-not $useFixedHours) {
+                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+            }
+
+        } else {
+
+            # It's nighttime - dark theme period
+            $NextTriggerTime = if ($Now -ge $Sunset) { $TomorrowSunrise } else { $Sunrise }
+            $NextTaskName = $SunriseTaskName
+            $mode = "dark"
+
+            # Check if mode is already correct
+            if ($useThemeFiles) {
+
+                if ($CurrentTheme -match $themeDark) {
+
+					Write-Log "$themeDark is already set. No theme switching needed."
+					if (-not $useFixedHours) {
+
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+					}
+					exit
+				}
+
+                Write-Log "Setting the theme $themeDark" -verboseMessage $true
+
+				# Set the wallpaper, grab its name
+				$selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
+
+				# Change the theme
+                Set-ThemeFile -ThemePath $darkPath
+
+				# line for log and notification
+                $mainLine = "$themeDark activated. Next trigger at: $NextTriggerTime"
 
             } else {
 
-				Write-Log "Applying $mode mode" -verboseMessage $true
-                Set-NativeTheme -Mode $mode
-				$mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
+                if ($NativeValue -eq 0) {
+
+					Write-Log "Dark mode is already set. No theme switching needed."
+					if (-not $useFixedHours) {
+
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+					}
+					exit
+				}
+
+                Write-Log "Applying $mode mode" -verboseMessage $true
+
+				# Set the wallpaper, grab its name
+				$selectedWall = & $workerPath -Path $wallDarkPath -InformationAction Continue
+
+				# Change the mode
+                Set-ThemeMode -Mode $Mode
+
+				# Start rotating wallpapers via task
+				Set-WallpaperRotationTask -Mode $mode
+
+				# line for log and notification
+                $mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
             }
 
-			# Restart configured extra apps and Explorer
-			Update-Apps -themeMode $mode
+            Update-Apps -themeMode $mode
+            Write-Log $mainLine
 
-			# Logging
-			Write-Log $mainLine
+			# Send notification
+            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
 
-			# Create notification
-			Send-ThemeNotification -MainLine $mainLine -SelectedWallpaper $selectedWall
-
-			# For dynamic hours, create the next task
-			# For fixed hours, we already created both tasks at the beginning if needed
-			if (-not $useFixedHours) {
-
-				Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
-			}
-		}
+			# Register the task
+            if (-not $useFixedHours) {
+                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+            }
+        }
 	}
 
 # ============= RUNTIME  ==============
@@ -1630,6 +1614,4 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 		Write-Log "Error: $_"
 	}
-
-
 
