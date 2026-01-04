@@ -29,7 +29,7 @@
 	- Fixed a problem with the script not recognizing it was running from Task Scheduler
 	- Improved geolocation
 	- Removed the MusicBee restart option, as not really helpful
-	- Several minor fixes
+	- Many minor fixes
 #>
 
 # ============= Script Version ==============
@@ -1614,4 +1614,5 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 		Write-Log "Error: $_"
 	}
+
 

@@ -77,7 +77,7 @@ jobs:
     - name: Zip files
       run: |
         mkdir -p release
-        cp at.ps1 Config.ps1 Setup.ps1 AutoTheme.png LICENSE README.md release/
+        cp at.ps1 at-config.ps1 at-setup.ps1 at.png at-wallpaper.ps1 AutoTheme.ps1 LICENSE README.md release/
         zip -r release-v$NEW_VERSION.zip release/
         echo "ZIP_FILE=release-v$NEW_VERSION.zip" >> $GITHUB_ENV
 
