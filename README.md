@@ -1,12 +1,15 @@
+
 # AUTO THEME
 Powershell script which changes the active Windows theme and Desktop background based on daylight or a predefined schedule. Works in Windows 10/11.  Not tested in Windows 7.
 
 ## Description
-This script automatically and silently switches the Windows active theme, depending on daylight or hours set by the user.
+![Animation](https://github.com/user-attachments/assets/cd227523-78bf-42e4-a60e-ef21ce78c405)
 
-It directly activates Windows Light and Dark modes and optionally handles its own native dedicated wallpapers slideshows for each, so that you can have "dark" and "light" wallpapers showing at the right times. Upon slideshow changes, it can display the name of the wallpaper in a notification or Rainmeter skin.
+**Auto Theme** is a powerful script to automatically and silently switch the Windows color mode, depending on daylight or hours set by the user. It can directly activate Windows <ins>Light</ins> and <ins>Dark</ins> modes and optionally handle its own <ins>dedicated wallpapers slideshows</ins> for each, so that you can have "dark" and "light" wallpapers showing at the right times. 
+Upon slideshow changes, it can <ins>display the name of the wallpaper</ins> in a notification or Rainmeter skin.
 
-Alternatively, it can work by loading `.theme` files. This may allow for a higher degree of customization and compatibility on certain systems. If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
+Alternatively, it can work by loading `.theme` files. This may allow for a higher degree of customization and compatibility on certain systems. 
+If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
 
 **Auto Theme** is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
@@ -20,8 +23,8 @@ When run as the command `.\at.ps1` from terminal or desktop shortcut, the script
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 
 2) Open the `at-config.ps1` file and modify variables as preferred:
-	
- 	![image](https://github.com/user-attachments/assets/166b21d9-7a56-4686-9376-641abc58727b "All entries in the config file contain exhaustive explanations.")
+
+	<img width="847" height="1238" alt="All entries in the config file contain exhaustive explanations." src="https://github.com/user-attachments/assets/80a3b57f-047d-46fc-8be7-175300d562bb" />
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
 	
 3) If using `.theme` files[^1]: 
@@ -51,9 +54,8 @@ When run from terminal, using `.\at.ps1`[^2], the script will 'toggle' the theme
 ![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/5ea7e34d-4e55-4cd4-a629-73f92ef2436c "The command can be run in terminal in verbose mode.")
 <br /><sup>The command `.\at.ps1` can be run in terminal in verbose mode.</sup>
 
-For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\AutoTheme.ps1"`, indicating the same path in the `Start in` field:
-
-![image](https://github.com/user-attachments/assets/f8e2d534-7696-464d-9d83-e18a39ea9942 "A Windows shortcut can be created to directly toggle the theme.")
+For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\at.ps1"`, indicating the same path in the `Start in` field:
+<img width="532" height="540" alt="A Windows shortcut can be created to directly toggle the theme." src="https://github.com/user-attachments/assets/b85cb2d7-91b1-44ef-90d4-b504b74c40df" />
 <br /><sup>A Windows shortcut can be created to directly toggle the theme.</sup>
 
 ## Extra apps
