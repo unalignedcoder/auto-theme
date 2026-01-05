@@ -192,11 +192,11 @@
         # Using -User $userSid ensures the task is tied to the correct account context
         if ($windowsVersion -eq "Windows 10") {
             LogThis "Creating scheduled task for Windows 10." -verboseMessage $true
-            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -RunLevel Highest -Compatibility Win8 -Force | Out-Null
+            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -Description "Main Auto Theme task." -RunLevel Highest -Compatibility Win8 -Force | Out-Null
         } else {
             LogThis "Creating scheduled task for Windows 11." -verboseMessage $true
             # Added $Settings here too
-            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -RunLevel Highest -Force | Out-Null
+            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -Description "Main Auto Theme task." -RunLevel Highest -Force | Out-Null
         }
         LogThis "Scheduled task '$TaskName' created successfully!" -Level Success
     } catch {

@@ -2,7 +2,7 @@
 # ============= Theme variables =============
 
 	<# If `$true`, the script will use `.theme` files to select light and dark themes, as well as wallpaper slideshows and other personalizations. If `$false`, it will use its own native system to switch between dark and light modes, and implement a wallpaper slideshow accordingly. #>
-	$useThemeFiles = $true
+	$useThemeFiles = $false
 
 	<# Name of theme files
 	* Only relevant when `$useThemeFiles = $true` #>
@@ -39,7 +39,7 @@
     "notification" - Shows a Windows BurntToast notification.
     "none"         - Changes the wallpaper with no UI feedback. 
 	* Only relevant when `$useThemeFiles = $false` 
-	Note: To achieve the same effect when using `.theme` files or the Windows standard slideshow, check my Wallpaper Name Notification script on Github. N#>
+	Note: To achieve the same effect when using `.theme` files or the Windows standard slideshow, check my Wallpaper Name Notification script on Github. #>
     $howToDisplayName = "none" 
 
     <# Path to Rainmeter executable
@@ -49,9 +49,9 @@
 	<# The Config Name of your Rainmeter skin. 
     This is the relative path from your 'Skins' folder to the folder containing the `.ini` file.
     Example: If the skin is in 'Skins\AutoTheme\Wallpaper\at.ini', use "AutoTheme\Wallpaper"
-	You can find in the repository a functional example of a skin that shows the wallpaper name at the bottom of the screen. 
-	* Only relevant when `$useThemeFiles = $false`	#>
+	You can find in the repository a functional example of a skin that shows the wallpaper name at the bottom of the screen. #>
 	$rainmeterSkinName = "AutoTheme\Wallpaper"
+	$rainmeterSkinFile   = "at.ini"
 
 	<# Randomize FIRST wallpaper - when using `.theme` files AND shuffling wallpapers.
 	Even if `shuffle=1` is set in a `.theme` file, Windows will always use the first wallpaper in alphabetic order as the first shown.
@@ -148,3 +148,35 @@
 	
     # Write Wallpaper name in Registry for other apps or scripts to read
     $writeRegistry = $false
+
+# ============= Shared Win32 API & Power Management ==============
+
+$Win32Code = @'
+using System;
+using System.Runtime.InteropServices;
+
+public class WinAPI {
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    public static extern IntPtr SendMessageTimeout(
+        IntPtr hWnd, uint Msg, IntPtr wParam, string lParam,
+        uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    public static extern uint SetThreadExecutionState(uint esFlags);
+}
+'@
+
+# Load the API class if not already present
+if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
+    Add-Type -TypeDefinition $Win32Code -ErrorAction SilentlyContinue | Out-Null
+}
+
+# Apply Background Power State immediately upon loading config
+# This prevents any script using this config from blocking monitor/system sleep.
+try {
+    [WinAPI]::SetThreadExecutionState([System.UInt32]2147483648) | Out-Null
+} catch { }
+

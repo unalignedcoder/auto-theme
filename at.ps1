@@ -20,48 +20,20 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- MAJOR UPDATE:
-	- Added a native system to load Dark or Light modes and randomize wallpapers. `.theme` files can still be used, see readme file
-    - Renamed the script "at.ps1" for consistency with my other "short-named" projects.
-	- Changed the names of the generated tasks, make sure you delete the old ones in Task Scheduler.
-    - Added a "wrapper" script (`AutoTheme.ps1`) for compatibility with older tasks and existing shortcuts.
-	- Added a worker script (`at-wallpaper.ps1`) to handle the wallpaper slideshow natively via Task Scheduler.
-	- Fixed a problem with the script not recognizing it was running from Task Scheduler
-	- Improved geolocation
-	- Removed the MusicBee restart option, as not really helpful
-	- Many minor fixes
+	- Fixed loading/unloading of Rainmeter skins
+	- Added description to the Scheduled Tasks
+	- Attempt to correct suspect interference with Power settings
+	- Several minor fixes
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.40"
+	$scriptVersion = "1.0.41"
 
 # ============= Config file ==============
 
 	$ConfigPath = Join-Path $PSScriptRoot "at-config.ps1"
-
-# ============= Win32 API Definitions ==============
-
-$Win32Code = @'
-using System;
-using System.Runtime.InteropServices;
-
-public class WinAPI {
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr SendMessageTimeout(
-        IntPtr hWnd, uint Msg, IntPtr wParam, string lParam,
-        uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
-}
-'@
-
-# Only add the type if it hasn't been added in this session yet
-if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
-    Add-Type -TypeDefinition $Win32Code
-}
 
 # ============= FUNCTIONS  ==============
 
@@ -469,77 +441,67 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 	# Handles the creation and management of the native wallpaper slideshow task
 	function Set-WallpaperRotationTask {
-		param (
-			[string]$Mode # "light" or "dark"
-		)
+        param (
+            [string]$Mode # "light" or "dark"
+        )
 
-		# 1. Clean up old task and exit if rotation is not needed
-		$TaskName = "AutoTheme Wallpaper Changer"
-		$wallPathToPass = if ($Mode -eq "light") { $wallLightPath } else { $wallDarkPath }
+        # 1. Setup Variables
+        $TaskName = "Auto Theme wallpaper changer"
+        $wallPathToPass = if ($Mode -eq "light") { $wallLightPath } else { $wallDarkPath }
 
-		# --- THE LOGIC CHECK ---
-		# We check if the path is a folder. If it's a fixed file, we don't need a rotation task.
-		$isFolder = Test-Path $wallPathToPass -PathType Container
+        # --- THE LOGIC CHECK ---
+        $isFolder = Test-Path $wallPathToPass -PathType Container
 
-		if ($useThemeFiles -or $slideShowInterval -le 0 -or $noWallpaperChange -or -not $isFolder) {
-			if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
-				Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-				Write-Log "Wallpaper rotation not needed (Fixed image or disabled). Removed task." -verboseMessage $true
-			}
-			return
-		}
+        if ($useThemeFiles -or $slideShowInterval -le 0 -or $noWallpaperChange -or -not $isFolder) {
+            if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
+                Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+                Write-Log "Wallpaper rotation not needed (Fixed image or disabled). Removed task." -verboseMessage $true
+            }
+            return
+        }
 
-		# 2. Verify worker script exists
-		$workerScript = Join-Path $PSScriptRoot "at-wallpaper.ps1"
-		if (-not (Test-Path $workerScript)) {
-			Write-Log "Error: Worker script not found at $workerScript. Cannot schedule rotation."
-			return
-		}
+        # 2. Verify worker script exists
+        $workerScript = Join-Path $PSScriptRoot "at-wallpaper.ps1"
+        if (-not (Test-Path $workerScript)) {
+            Write-Log "Error: Worker script not found at $workerScript. Cannot schedule rotation."
+            return
+        }
 
-		# 3. Build the command string respecting terminalVisibility
-		$psArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -NonInteractive -File `"$workerScript`" -Path `"$wallPathToPass`""
-
-		switch ($terminalVisibility) {
-			"ch" {
-				$exe = "conhost.exe"
-				$arguments = "--headless PowerShell.exe $psArgs"
-			}
-			"wt" {
-				if (Get-Command "wt.exe" -ErrorAction SilentlyContinue) {
-					$exe = "wt.exe"
-					$arguments = "-w 0 nt PowerShell.exe -NoLogo $psArgs"
-				} else {
-					$exe = "PowerShell.exe"
-					$arguments = $psArgs
-				}
-			}
-			Default {
-				$exe = "PowerShell.exe"
-				$arguments = $psArgs
-			}
-		}
-
-		# 4. Define Action and Trigger
-		$action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
-
-		# IMPROVEMENT: Use .AddMinutes() for clarity and set the first run to 1 interval in the future.
-		# This prevents the task from "firing" immediately after theme toggle.
-		$triggerTime = (Get-Date).AddMinutes([int]$slideShowInterval)
-		$repetition = New-TimeSpan -Minutes ([int]$slideShowInterval)
-		$trigger = New-ScheduledTaskTrigger -Once -At $triggerTime -RepetitionInterval $repetition
-
-		# 5. Register/Overwrite the task
-		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-		$principal = New-ScheduledTaskPrincipal -UserId $currentUser.User.Value -LogonType Interactive -RunLevel Highest
-		$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-
+        # 3. Define the Trigger (Starting 1 interval in the future)
+        $triggerTime = (Get-Date).AddMinutes([int]$slideShowInterval)
+		$wallpaperDesc = "Triggers wallpaper change based on user-defined intervals. Managed by the main Auto Theme task."
+        
+        # 4. Call the Helper
+        # We pass the custom description here; otherwise, Register-Task will 
+        # use its match-logic to assign the wallpaper description automatically.
 		try {
-			Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
-			Write-Log "Native Slideshow scheduled: Every $slideShowInterval minutes using $Mode wallpapers."
+
+			# 1. Register base task
+			Register-Task -Name $TaskName -NextTriggerTime $triggerTime -Description $wallpaperDesc
+			
+			# 2. Get task object
+			$task = Get-ScheduledTask -TaskName $TaskName
+			
+			# 3. Format interval as ISO 8601 (PT#M)
+			# For 20 minutes, this results in "PT20M"
+			$isoInterval = "PT$($slideShowInterval)M"
+			
+			# 4. Apply Interval and a very long Duration (Indefinite)
+			# "P1D" means a duration of 1 day, which allows the repetition to work.
+			# Once the day is up, the task trigger (set to 'Once') handles the rollover.
+			$task.Triggers[0].Repetition.Interval = $isoInterval
+			$task.Triggers[0].Repetition.Duration = "P1D" 
+			
+			# 5. Commit changes
+			Set-ScheduledTask -InputObject $task | Out-Null
+			
+			Write-Log "Native Slideshow scheduled: Every $slideShowInterval minutes."
+
 		} catch {
+
 			Write-Log "Failed to register wallpaper rotation task: $_"
 		}
-	}
+    }
 
 	# Helper to launch processes without admin privileges
     function Start-ProcessUnelevated {
@@ -1075,10 +1037,11 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 	<# Create a scheduled task for next daylight events
     This task will be created or overwritten by the main task. #>
-    function Register-Task {
+	function Register-Task {
         param (
             [DateTime]$NextTriggerTime,
-            [String]$Name
+            [String]$Name,
+            [String]$Description = "Managed by the Auto Theme script."
         )
 
         # Schedule next run
@@ -1090,79 +1053,52 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
         # Logic to determine the executable and arguments based on $terminalVisibility
         switch ($terminalVisibility) {
             "ch" {
-                Write-Log "Visibility mode: Invisible (conhost --headless)"
                 $exe = "conhost.exe"
                 $arguments = "--headless PowerShell.exe $psArgs"
             }
             "wt" {
                 if (Get-Command "wt.exe" -ErrorAction SilentlyContinue) {
-                    Write-Log "Visibility mode: Windows Terminal"
                     $exe = "wt.exe"
                     $arguments = "-w 0 nt PowerShell.exe -NoLogo $psArgs"
                 } else {
-                    Write-Log "Warning: Windows Terminal not found. Falling back to PowerShell."
                     $exe = "PowerShell.exe"
                     $arguments = $psArgs
                 }
             }
-            "ps" {
-                Write-Log "Visibility mode: PowerShell Console"
-                $exe = "PowerShell.exe"
-                $arguments = -NoLogo $psArgs
-            }
             Default {
-                Write-Log "Visibility mode: Unknown ($terminalVisibility). Defaulting to PowerShell Console."
                 $exe = "PowerShell.exe"
                 $arguments = $psArgs
             }
         }
 
-        $fullCommand = "$exe $arguments"
-        Write-Log "Full Command: $fullCommand" -verboseMessage $true
-
-        Write-Log "Creating scheduled task action..." -verboseMessage $true
-        # Use the dynamic $exe and $arguments variables here
+        # Create Action and Trigger
         $action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
 
-        # Different trigger depending on if we're using fixed hours
         if ($useFixedHours -and ($Name -eq "Auto Theme fixed sunrise" -or $Name -eq "Auto Theme fixed sunset")) {
-
-            # For fixed hours, create a daily trigger at the specific time
             $timeOfDay = $NextTriggerTime.ToString("HH:mm")
             $trigger = New-ScheduledTaskTrigger -Daily -At $timeOfDay
-            Write-Log "Created daily trigger for $timeOfDay" -verboseMessage $true
-
         } else {
-
-            # For dynamic times, create a one-time trigger
             $trigger = New-ScheduledTaskTrigger -Once -At $NextTriggerTime
-            Write-Log "Created one-time trigger for $NextTriggerTime" -verboseMessage $true
         }
 
-        # $userSid = $env:USERNAME deprecated method
-		$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
-		$userSid = $currentUser.User.Value
+        # Define Principal and Settings
+        $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $userSid = $currentUser.User.Value
         $principal = New-ScheduledTaskPrincipal -UserId $userSid -LogonType Interactive -RunLevel Highest
         $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -Compatibility Win8 -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 
-        $task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings
-        Write-Log "Scheduled task action created." -verboseMessage $true
+        # Build the Task Object with the Description
+        $task = New-ScheduledTask -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description $Description
 
-        # Unregister the old task if it exists
+        # Unregister old and register new
         if (Test-IfTaskExists $Name) {
-
             Unregister-ScheduledTask -TaskName $Name -Confirm:$false
-            Write-Log "Unregistered existing task: $Name" -verboseMessage $true
         }
 
-        # Register the new task
         try {
-
             Register-ScheduledTask -TaskName $Name -InputObject $task | Out-Null
             Write-Log "Registered new task: $Name"
-
         } catch {
-
             Write-Log "Error registering task: $_"
         }
     }
@@ -1322,13 +1258,13 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 			# Only create fixed tasks if they don't already exist
 			if (-not $sunriseTaskExists) {
 
-				Register-Task -NextTriggerTime $Sunrise -Name $SunriseTaskName
+				Register-Task -NextTriggerTime $Sunrise -Name $SunriseTaskName -Description "Triggers transition to light mode based on a fixed schedule. Managed by the main Auto Theme task."
 				Write-Log "Created fixed sunrise task for daily operation"
 			}
 
 			if (-not $sunsetTaskExists) {
 
-				Register-Task -NextTriggerTime $Sunset -Name $SunsetTaskName
+				Register-Task -NextTriggerTime $Sunset -Name $SunsetTaskName -Description "Triggers transition to dark mode based on a fixed schedule. Managed by the main Auto Theme task."
 				Write-Log "Created fixed sunset task for daily operation"
 			}
 
@@ -1429,7 +1365,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 					Write-Log "$themeLight is already set. No theme switching needed."
 					if (-not $useFixedHours) {
 
-						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to dark mode based on daylight. Managed by the main Auto Theme task."
 					}
 					exit
 				}
@@ -1452,7 +1388,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 					Write-Log "Light mode is already set. No theme switching needed."
 					if (-not $useFixedHours) {
 
-						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to dark mode based on daylight. Managed by the main Auto Theme task."
 					}
 					exit
 				}
@@ -1480,7 +1416,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 			# Register the task
             if (-not $useFixedHours) {
-                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to dark mode based on daylight. Managed by the main Auto Theme task."
             }
 
         } else {
@@ -1498,7 +1434,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 					Write-Log "$themeDark is already set. No theme switching needed."
 					if (-not $useFixedHours) {
 
-						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to light mode based on daylight. Managed by the main Auto Theme task."
 					}
 					exit
 				}
@@ -1521,7 +1457,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 					Write-Log "Dark mode is already set. No theme switching needed."
 					if (-not $useFixedHours) {
 
-						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+						Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to light mode based on daylight. Managed by the main Auto Theme task."
 					}
 					exit
 				}
@@ -1549,7 +1485,7 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 			# Register the task
             if (-not $useFixedHours) {
-                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName
+                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to light mode based on daylight. Managed by the main Auto Theme task."
             }
         }
 	}
@@ -1614,5 +1550,6 @@ if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
 
 		Write-Log "Error: $_"
 	}
+
 
 
