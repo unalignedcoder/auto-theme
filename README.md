@@ -5,7 +5,7 @@ Powershell script which changes the active Windows theme and Desktop background 
 ## Description
 ![Animation](https://github.com/user-attachments/assets/cd227523-78bf-42e4-a60e-ef21ce78c405)
 
-**Auto Theme** is a powerful script to automatically and silently switch the Windows color mode, depending on daylight or hours set by the user. It can directly activate Windows <ins>Light</ins> and <ins>Dark</ins> modes and optionally handle its own <ins>dedicated wallpapers slideshows</ins> for each, so that you can have "dark" and "light" wallpapers showing at the right times. 
+**Auto Theme** is a powerful script designed to automatically and silently switch the Windows color mode, depending on daylight or hours set by the user. It can directly activate Windows <ins>Light</ins> and <ins>Dark</ins> modes and optionally handle its own <ins>dedicated wallpapers slideshows</ins> for each, so that you can have "dark" and "light" wallpapers showing at the right times. 
 Upon slideshow changes, it can <ins>display the name of the wallpaper</ins> in a notification or Rainmeter skin.
 
 Alternatively, it can work by loading `.theme` files[^1]. This may allow for a higher degree of customization and compatibility on certain systems. 
