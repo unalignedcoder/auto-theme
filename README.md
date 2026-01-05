@@ -2,11 +2,11 @@
 Powershell script which changes the active Windows theme and Desktop background based on daylight or a predefined schedule. Works in Windows 10/11.  Not tested in Windows 7.
 
 ## Description
-This script automatically switches the Windows active theme depending on Sunrise and Sunset daylight times, or hours set by the user.
+This script automatically and silently switches the Windows active theme, depending on daylight or hours set by the user.
 
-It directly activates Windows Light and Dark modes at these times, and handles its own native dedicated wallpapers slideshows for each. 
+It directly activates Windows Light and Dark modes and optionally handles its own native dedicated wallpapers slideshows for each, so that you can have "dark" and "light" wallpapers showing at the right times. Upon slideshow changes, it can display the name of the wallpaper in a notification or Rainmeter skin.
 
-Alternatively, it can work by activating dedicated `.theme` files. This may allow for a higher degree of customization and compatibility on certain systems.
+Alternatively, it can work by loading `.theme` files. This may allow for a higher degree of customization and compatibility on certain systems. If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
 
 **Auto Theme** is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
