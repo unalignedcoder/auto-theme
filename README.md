@@ -8,7 +8,7 @@ Powershell script which changes the active Windows theme and Desktop background 
 **Auto Theme** is a powerful script to automatically and silently switch the Windows color mode, depending on daylight or hours set by the user. It can directly activate Windows <ins>Light</ins> and <ins>Dark</ins> modes and optionally handle its own <ins>dedicated wallpapers slideshows</ins> for each, so that you can have "dark" and "light" wallpapers showing at the right times. 
 Upon slideshow changes, it can <ins>display the name of the wallpaper</ins> in a notification or Rainmeter skin.
 
-Alternatively, it can work by loading `.theme` files. This may allow for a higher degree of customization and compatibility on certain systems. 
+Alternatively, it can work by loading `.theme` files[^1]. This may allow for a higher degree of customization and compatibility on certain systems. 
 If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
 
 **Auto Theme** is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
@@ -17,7 +17,10 @@ It only connects to the internet to verify Location and retrieve Sunrise and Sun
 
 It can also stay completely offline by operating on fixed hours provided by the user.
 
-When run as the command `.\at.ps1` from terminal or desktop shortcut, the script toggles between themes, ignoring scheduled events.
+When run from terminal, using the `.\at.ps1`[^2] command, the script will 'toggle' the theme mode and then exit, ignoring any scheduled event.
+
+![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/5ea7e34d-4e55-4cd4-a629-73f92ef2436c "The command can be run in terminal in verbose mode.")
+<br /><sup>The command `.\at.ps1` can be run in terminal in verbose mode.</sup>
 
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
@@ -27,7 +30,7 @@ When run as the command `.\at.ps1` from terminal or desktop shortcut, the script
 	<img width="847" height="1238" alt="All entries in the config file contain exhaustive explanations." src="https://github.com/user-attachments/assets/80a3b57f-047d-46fc-8be7-175300d562bb" />
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
 	
-3) If using `.theme` files[^1]: 
+3) If using `.theme` files: 
 	- Make sure `$useThemeFiles = $true` is set in the config file;
 	- Modify settings in the _Personalize_ window (including colors or, for example, a wallpaper slideshow) and then save the theme;
 	![image](https://github.com/user-attachments/assets/0999c082-16ec-456c-ba58-88783bc1abb3 "In the Personalize>Themes windows, right click on a theme and select 'Save for sharing'.")
@@ -48,11 +51,6 @@ When run as the command `.\at.ps1` from terminal or desktop shortcut, the script
 This script is designed to run from Task Scheduler, and after the initial setup doesn't need interaction from the user.
 
 The Scheduled tasks can run the script in a completely hidden manner, or in a visible way, per user choice.
-
-When run from terminal, using `.\at.ps1`[^2], the script will 'toggle' the theme mode and then exit (optionally modifying wallpapers), ignoring any scheduled event. This can be useful for testing purposes, but also for the odd times when there is need to manually switch the theme regardless of task settings. 
-
-![GIF 13 03 2025 1-30-58](https://github.com/user-attachments/assets/5ea7e34d-4e55-4cd4-a629-73f92ef2436c "The command can be run in terminal in verbose mode.")
-<br /><sup>The command `.\at.ps1` can be run in terminal in verbose mode.</sup>
 
 For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\at.ps1"`, indicating the same path in the `Start in` field:
 <img width="532" height="540" alt="A Windows shortcut can be created to directly toggle the theme." src="https://github.com/user-attachments/assets/b85cb2d7-91b1-44ef-90d4-b504b74c40df" />
