@@ -53,8 +53,8 @@ This script is designed to run from Task Scheduler, and after the initial setup 
 The Scheduled tasks can run the script in a completely hidden manner, or in a visible way, per user choice.
 
 For convenience, a shortcut to the script can be created and placed on the desktop or taskbar for quick access. In this case, the shortcut should be to `powershell.exe` followed by the path to the script `"C:\path\to\at.ps1"`, indicating the same path in the `Start in` field:
-<img width="532" height="540" alt="A Windows shortcut can be created to directly toggle the theme." src="https://github.com/user-attachments/assets/b85cb2d7-91b1-44ef-90d4-b504b74c40df" />
-<br /><sup>A Windows shortcut can be created to directly toggle the theme.</sup>
+<p><img width="532" height="540" alt="A Windows shortcut can be created to directly toggle the theme." src="https://github.com/user-attachments/assets/b85cb2d7-91b1-44ef-90d4-b504b74c40df" />
+<br /><sup>A Windows shortcut can be created to directly toggle the theme.</sup></p>
 
 ## Extra apps
 Workarounds have been added for a number of apps which do not toggle theme gracefully when the system theme changes. More details in the Config file.
