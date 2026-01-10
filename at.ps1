@@ -20,16 +20,15 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Fixed loading/unloading of Rainmeter skins
-	- Added description to the Scheduled Tasks
-	- Attempt to correct suspect interference with Power settings
-	- Several minor fixes
+	- Fixed a problem that caused the wallpaper not to change if the PC was off a long time
+	- Improved the at-setup.ps1 script for the creation of the main scheduled task
+	- Many minor fixes
 #>
 
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.42"
+	$scriptVersion = "1.0.43"
 
 # ============= Config file ==============
 
@@ -441,67 +440,73 @@
 
 	# Handles the creation and management of the native wallpaper slideshow task
 	function Set-WallpaperRotationTask {
-        param (
-            [string]$Mode # "light" or "dark"
-        )
+		param (
+			[string]$Mode # "light" or "dark"
+		)
 
-        # 1. Setup Variables
-        $TaskName = "Auto Theme wallpaper changer"
-        $wallPathToPass = if ($Mode -eq "light") { $wallLightPath } else { $wallDarkPath }
-
-        # --- THE LOGIC CHECK ---
-        $isFolder = Test-Path $wallPathToPass -PathType Container
-
-        if ($useThemeFiles -or $slideShowInterval -le 0 -or $noWallpaperChange -or -not $isFolder) {
-            if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
-                Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-                Write-Log "Wallpaper rotation not needed (Fixed image or disabled). Removed task." -verboseMessage $true
-            }
-            return
-        }
-
-        # 2. Verify worker script exists
-        $workerScript = Join-Path $PSScriptRoot "at-wallpaper.ps1"
-        if (-not (Test-Path $workerScript)) {
-            Write-Log "Error: Worker script not found at $workerScript. Cannot schedule rotation."
-            return
-        }
-
-        # 3. Define the Trigger (Starting 1 interval in the future)
-        $triggerTime = (Get-Date).AddMinutes([int]$slideShowInterval)
+		# 1. Setup Variables
+		$TaskName = "Auto Theme wallpaper changer"
+		$wallPathToPass = if ($Mode -eq "light") { $wallLightPath } else { $wallDarkPath }
 		$wallpaperDesc = "Triggers wallpaper change based on user-defined intervals. Managed by the main Auto Theme task."
-        
-        # 4. Call the Helper
-        # We pass the custom description here; otherwise, Register-Task will 
-        # use its match-logic to assign the wallpaper description automatically.
-		try {
 
-			# 1. Register base task
-			Register-Task -Name $TaskName -NextTriggerTime $triggerTime -Description $wallpaperDesc
-			
-			# 2. Get task object
+		# --- THE LOGIC CHECK ---
+		$isFolder = Test-Path $wallPathToPass -PathType Container
+		if ($useThemeFiles -or $slideShowInterval -le 0 -or $noWallpaperChange -or -not $isFolder) {
+			if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
+				Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+				Write-Log "Wallpaper rotation not needed (Fixed image or disabled). Removed task." -verboseMessage $true
+			}
+			return
+		}
+
+		# 2. Verify worker script exists
+		$workerScript = Join-Path $PSScriptRoot "at-wallpaper.ps1"
+		if (-not (Test-Path $workerScript)) {
+			Write-Log "Error: Worker script not found at $workerScript. Cannot schedule rotation."
+			return
+		}
+
+		# 3. Define the Start Time (1 interval in the future)
+		$triggerTime = (Get-Date).AddMinutes([int]$slideShowInterval)
+
+		# 4. Prepare specific arguments for the worker script
+		$workerArgs = "-Path `"$wallPathToPass`""
+
+		try {
+			# 5. Call the Helper with the CUSTOM script and arguments
+			# This tells the task to run 'at-wallpaper.ps1' instead of 'at.ps1'
+			Register-Task -Name $TaskName `
+						-NextTriggerTime $triggerTime `
+						-Description $wallpaperDesc `
+						-CustomFile $workerScript `
+						-Arguments $workerArgs
+
+			# 6. Apply the Repetition Patch
+			# Register-Task creates a standard trigger; we must modify it for repeating intervals.
 			$task = Get-ScheduledTask -TaskName $TaskName
 			
-			# 3. Format interval as ISO 8601 (PT#M)
-			# For 20 minutes, this results in "PT20M"
-			$isoInterval = "PT$($slideShowInterval)M"
+			# We switch to a Daily trigger so it persists across reboots
+			$task.Triggers[0] = New-ScheduledTaskTrigger -Daily -At ($triggerTime.ToString("HH:mm"))
 			
-			# 4. Apply Interval and a very long Duration (Indefinite)
-			# "P1D" means a duration of 1 day, which allows the repetition to work.
-			# Once the day is up, the task trigger (set to 'Once') handles the rollover.
-			$task.Triggers[0].Repetition.Interval = $isoInterval
-			$task.Triggers[0].Repetition.Duration = "P1D" 
+			# ISO 8601 format (PT#M) prevents the XML formatting error
+			$task.Triggers[0].Repetition.Interval = "PT$($slideShowInterval)M"
+			$task.Triggers[0].Repetition.Duration = "" # Indefinite repetition
 			
-			# 5. Commit changes
+			# Ensure it runs even if the PC was off during a scheduled tick
+			$task.Settings.StartWhenAvailable = $true
+			$task.Settings.MultipleInstances = "IgnoreNew"
+
 			Set-ScheduledTask -InputObject $task | Out-Null
 			
-			Write-Log "Native Slideshow scheduled: Every $slideShowInterval minutes."
+			Write-Log "Native Slideshow scheduled: Every $slideShowInterval minutes using $Mode wallpapers."
+			Write-Log "Worker: $workerScript" -verboseMessage $true
+			
 
 		} catch {
 
 			Write-Log "Failed to register wallpaper rotation task: $_"
 		}
-    }
+	}
 
 	# Helper to launch processes without admin privileges
     function Start-ProcessUnelevated {
@@ -1041,14 +1046,16 @@
         param (
             [DateTime]$NextTriggerTime,
             [String]$Name,
-            [String]$Description = "Managed by the Auto Theme script."
+            [String]$Description = "Managed by the Auto Theme script.",
+            [String]$CustomFile = $PSCommandPath, # Default to at.ps1
+            [String]$Arguments = ""               # Optional extra arguments
         )
 
         # Schedule next run
         Write-Log "Setting scheduled task: $Name"
 
         # Define base PowerShell arguments
-        $psArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -NonInteractive -File `"$PSCommandPath`""
+        $psArgs = "-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -NonInteractive -File `"$CustomFile`" $Arguments"
 
         # Logic to determine the executable and arguments based on $terminalVisibility
         switch ($terminalVisibility) {
@@ -1550,6 +1557,7 @@
 
 		Write-Log "Error: $_"
 	}
+
 
 
 

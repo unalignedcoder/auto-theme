@@ -15,7 +15,7 @@
 
 # ============= Config file ==============
 
-    $ConfigPath = Join-Path $PSScriptRoot "Config.ps1"
+    $ConfigPath = Join-Path $PSScriptRoot "at-config.ps1"
 
 # ============= FUNCTIONS  ==============
 
@@ -178,28 +178,48 @@
         }
     }
 
-    # IMPROVEMENT: Task Settings for Laptops
-    # Tasks default to "Stop if on battery." We need to disable that for theme switching.
-    $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable
+    # 1. Define common settings used by both windows 10 and 11
+    $CommonSettings = @{
+        AllowStartIfOnBatteries      = $true
+        DontStopIfGoingOnBatteries   = $true
+        StartWhenAvailable           = $true
+    }
 
     # Create the action
     $Action = New-ScheduledTaskAction -Execute $exe -Argument $arguments
 
     # Register the task
     $windowsVersion = Get-WindowsVersion
+    $TaskDescription = "Main Auto Theme task for scheduling sunrise/sunset events."
     
     try {
-        # Using -User $userSid ensures the task is tied to the correct account context
+
         if ($windowsVersion -eq "Windows 10") {
-            LogThis "Creating scheduled task for Windows 10." -verboseMessage $true
-            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -Description "Main Auto Theme task." -RunLevel Highest -Compatibility Win8 -Force | Out-Null
+
+            LogThis "Creating scheduled task for Windows 10 (Win8 Compatibility)." -verboseMessage $true
+            
+            $Settings = New-ScheduledTaskSettingsSet @CommonSettings -Compatibility Win8
+            
+            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid `
+                -Action $Action -Settings $Settings -Description $TaskDescription `
+                -RunLevel Highest -Force | Out-Null
+
         } else {
-            LogThis "Creating scheduled task for Windows 11." -verboseMessage $true
-            # Added $Settings here too
-            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid -Action $Action -Settings $Settings -Description "Main Auto Theme task." -RunLevel Highest -Force | Out-Null
+
+            LogThis "Creating scheduled task for Windows 11 (Native Compatibility)." -verboseMessage $true
+            
+            # Windows 11 uses the most modern task engine by default
+            $Settings = New-ScheduledTaskSettingsSet @CommonSettings
+            
+            Register-ScheduledTask -TaskName $TaskName -Trigger $Triggers -User $userSid `
+                -Action $Action -Settings $Settings -Description $TaskDescription `
+                -RunLevel Highest -Force | Out-Null
         }
+
         LogThis "Scheduled task '$TaskName' created successfully!" -Level Success
+
     } catch {
+
         LogThis "Critical error registering task: $_" -Level Error
         Pause
         Exit 1

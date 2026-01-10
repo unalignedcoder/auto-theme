@@ -67,5 +67,3 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 [^1]:	`.theme` files are simple configuration instructions for the Windows pesonalization engine. You can find two examples included in this repository, with helpful comments.
 [^2]:	To run a PowerShell script on Windows, you need to set `Execution Policy` in PowerShell, using this command: `Set-ExecutionPolicy RemoteSigned` as Administrator.
-
-
