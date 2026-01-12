@@ -71,7 +71,7 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 <p>&nbsp;</p>
 
-
+## Changelog
 
 ### v1.0.45 (2026-01-13)
 MAJOR UPDATE:
