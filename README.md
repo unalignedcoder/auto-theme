@@ -1,6 +1,6 @@
 ﻿
 # AUTO THEME
-Powershell script which changes the active Windows theme and Desktop background based on daylight or a predefined schedule. Works in Windows 10/11.  Not tested in Windows 7.
+Powershell script which changes the active Windows theme and Desktop background based on daylight or a predefined schedule. Works in Windows 10/11. 
 
 ## Description
 ![Animation](https://github.com/user-attachments/assets/cd227523-78bf-42e4-a60e-ef21ce78c405)
@@ -11,15 +11,17 @@ Upon slideshow changes, it can <ins>display the name of the wallpaper</ins> in a
 Alternatively, it can work by loading `.theme` files[^1]. This may allow for a higher degree of customization and compatibility on certain systems. 
 If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
 
-**Auto Theme** is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
+**Auto Theme** includes a Desktop context menu to control the slideshow, toggle the theme or refresh the sunrise/sunset schedule. This is first created via the setup script, but can be disabled in the configuration file, and/or removed using the included `.reg` file in the repository.
 
-This script operates <ins>almost entirely offline</ins>. It only connects to the internet to verify Location, in the case this is not retrivable from the system or is not provided by the user in the config file. 
+<img width="697" height="160" alt="image" src="https://github.com/user-attachments/assets/b471b45f-307e-446b-908f-4c8d978acf83" />
 
-Sunrise and sunset calculations are done locally (optionally the user can request this via free api services such as sunrisesunset.io, but it is mostly unnecessary.) 
+This script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
+
+It operates <ins>almost entirely offline</ins>. It only connects to the internet to verify Location, in the case this is not retrivable from the system or is not provided by the user in the config file. 
+
+Sunrise and sunset calculations are done natively (optionally the user can request to do this via free api services such as sunrisesunset.io, but it is mostly unnecessary.) 
 
 Alternatively, the script can operate on fixed hours provided by the user.
-
-**Auto Theme** includes a Desktop context menu to control the slideshow, toggle the theme or refresh the sunrise/sunset schedule. This is first created via the setup script, but can be disabled in the configuration file, and/or removed using the included `.reg` file in the repository.
 
 When run from terminal, using the `./at.ps1 --Toggle`[^2] command (or just `./at.ps1` with no parameters), the script will 'toggle' the theme mode and then exit, <ins>ignoring any scheduled event</ins>.
 
@@ -65,7 +67,7 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 <p>&nbsp;</p>
 
-<div align="center"><table border="1" cellspacing="0" cellpadding="20"><tr><td><p align="center">&nbsp;<br>Why, thank you for asking!</p><hr width="60%"><p align="center">ðŸ‘‰ You can donate to all my projects <a href="https://www.buymeacoffee.com/unalignedcoder" target="_blank">here</a> ðŸ‘ˆ<br>&nbsp;</p></td></tr></table></div>
+<div align="center"><table border="1" cellspacing="0" cellpadding="20"><tr><td><p align="center">&nbsp;<br>Why, thank you for asking!</p><hr width="60%"><p align="center">👉 You can donate to all my projects <a href="https://www.buymeacoffee.com/unalignedcoder" target="_blank">here</a> 👈<br>&nbsp;</p></td></tr></table></div>
 
 <p>&nbsp;</p>
 
@@ -73,15 +75,16 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 ### v1.0.45 (2026-01-13)
 MAJOR UPDATE:
-	- Added parameters to control script functions
-	- Added the ability to move the slideshow to the next wallpaper
-	- Added a native OFFLINE sunrise/sunset calculation system
-	- Added a Desktop CONTEXT MENU to control the slideshow or theme
-	- Fixed a problem where wallpapers would not change if a task was created without the need to change theme
-	- Fixed geolocation (again)
-	- Added verification of the config file to the setup script
-	- Improved the Rainmeter sample skin
-	- Many minor fixes
+- Added parameters to control script functions
+- Added the ability to move the slideshow to the next wallpaper
+- Added a native OFFLINE sunrise/sunset calculation system
+- Added a Desktop CONTEXT MENU to control the slideshow or theme
+- Fixed a problem where wallpapers would not change if a task was created without the need to change theme
+- Fixed geolocation (again)
+- Added verification of the config file to the setup script
+- Improved the Rainmeter sample skin
+- Many minor fixes
+
 ### v1.0.43
 - Fixed a problem that caused the wallpaper not to change if the PC was off a long time
 - Improved the at-setup.ps1 script for the creation of the main scheduled task
