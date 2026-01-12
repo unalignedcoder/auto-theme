@@ -32,7 +32,7 @@ When run from terminal, using the `./at.ps1 --Toggle`[^2] command (or just `./at
 ## Installation
 1) Download the latest [release](https://github.com/unalignedcoder/auto-theme/releases) and extract it to your preferred folder.
 
-2) Open the `at-config.ps1` file and modify variables as preferred:
+2) Open the `at-config.ps1` file and modify variables as needed:
 
 	<img width="847" height="1238" alt="All entries in the config file contain exhaustive explanations." src="https://github.com/user-attachments/assets/80a3b57f-047d-46fc-8be7-175300d562bb" />
 	<br /><sup>All entries in the config file come with exhaustive explanations.</sup>
