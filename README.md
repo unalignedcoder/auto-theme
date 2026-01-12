@@ -11,7 +11,7 @@ Upon slideshow changes, it can <ins>display the name of the wallpaper</ins> in a
 Alternatively, it can work by loading `.theme` files[^1]. This may allow for a higher degree of customization and compatibility on certain systems. 
 If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
 
-**Auto Theme** includes a Desktop context menu to control the slideshow, toggle the theme or refresh the sunrise/sunset schedule. This is first created via the setup script, but can be disabled in the configuration file, and/or removed using the included `.reg` file in the repository.
+**Auto Theme** includes a <ins>Desktop context menu</ins> to control the slideshow, toggle the theme or refresh the sunrise/sunset schedule. This is first created via the setup script, but can be disabled in the configuration file, and/or removed using the included `.reg` file in the repository.
 
 <img width="697" height="160" alt="image" src="https://github.com/user-attachments/assets/b471b45f-307e-446b-908f-4c8d978acf83" />
 
