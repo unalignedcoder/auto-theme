@@ -96,6 +96,15 @@
 	$sunriseOffset = 0
 	$sunsetOffset = 0
 
+# ============= Context menu =============
+
+	<# If `$true`, adds an 'Auto Theme' context menu on desktop.
+	This allows you to show the next wallpaper in the slideshow,
+	quickly switch between Light and Dark modes on demand, 
+	or refresh the Scheduled Tasks.
+	It may requires a restart of Explorer to take effect. #>
+	$addContextMenu = $true
+
 # ============= Extra apps variables =============
 
 	<# Sysinternals Process Explorer doesn't automatically change theme when the system theme is changed. Use this variable if you want it to be restarted.
@@ -149,7 +158,7 @@
     # Write Wallpaper name in Registry for other apps or scripts to read
     $writeRegistry = $false
 
-# ============= Shared Win32 API & Power Management ==============
+# ============= Shared Win32 API & Power Management, for wallpaper changing ==============
 
 $Win32Code = @'
 using System;

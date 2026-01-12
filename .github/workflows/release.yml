@@ -59,12 +59,20 @@ jobs:
     # extract release notes from the script .NOTES section
     - name: Extract release notes from script
       run: |
-        # Add 4 spaces to the start of the warning so it creates a code block too
-        WARNING_MESSAGE="    (Make sure to edit the new Config.ps1 file before overwriting the old one.)"
+        # --- add 4 spaces to the start of the warning (formats as code)
+        # WARNING_MESSAGE="    (Make sure to edit the new \`at-config.ps1\` file before overwriting the old one.)"
         
-        # 1. Capture block. 2. Remove first/last line. 
-        # 3. Regex: Capture leading spaces (\1), match the hyphen/space, replace with just the leading spaces.
-        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' at.ps1 | sed '1d;$d' | sed -E 's/^([[:space:]]*)-[[:space:]]*/\1/')
+        # --- no spaces added (formats as italic text)
+        WARNING_MESSAGE="_Make sure to edit the new \`at-config.ps1\` file before overwriting the old one._"
+
+        # --- This regex strips hyphens, keeps indent (formats as code) ---
+        # RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' at.ps1 | sed '1d;$d' | sed -E 's/^([[:space:]]*)-[[:space:]]*/\1/')
+        
+        # --- this regex keeps hyphens, keeps indent (formats as code)  ---
+        # RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' at.ps1 | sed '1d;$d')
+
+        # --- this regex keeps hyphens, removes the indent (formats as list) ---
+        RELEASE_NOTES=$(sed -n '/^.NOTES/,/^#>/p' at.ps1 | sed '1d;$d' | sed 's/^[[:space:]]*//')
         
         # Combine them. 
         FULL_RELEASE_NOTES="$(printf "%s\n\n%s" "$RELEASE_NOTES" "$WARNING_MESSAGE")"
