@@ -15,6 +15,7 @@ If using `.theme` files and the standard Windows slideshow, displaying wallpaper
 **Auto Theme** includes a <ins>Desktop context menu</ins> to control the slideshow, toggle the theme or refresh the sunrise/sunset schedule. This is first created via the setup script, but can be disabled in the configuration file, and/or removed using the included `.reg` file in the repository.
 
 <img width="697" height="160" alt="image" src="https://github.com/user-attachments/assets/b471b45f-307e-446b-908f-4c8d978acf83" />
+<br /><sup>The Auto Theme context menu, as it appears on desktop right-click.</sup>
 
 This script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
