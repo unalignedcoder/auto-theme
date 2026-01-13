@@ -46,11 +46,11 @@ When run from terminal, using the `./at.ps1 --Toggle`[^2] command (or just `./at
 
 4) Run the script `./at-setup.ps1`[^2] to create the main scheduled task and the desktop context menu. The script will ask for system privileges if not run as admin, and then proceed to create and launch the "Auto Theme" task. 
 
-6) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, make sure that the Action is set up as follows:
+6) (alternative) You can of course create the task yourself using Task Scheduler, setting the triggers to anything you prefer. In this case, here's what the task's Action could look like:
 	- Program/script: `conhost.exe`
 	- Add arguments: `--headless Powershell.exe -WindowStyle Hidden -NonInteractive -ExecutionPolicy Bypass -NoProfile -File "C:\path\to\at.ps1"`
 	- Run with highest privileges.  
-<b>It is advisable to always add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out slideshow customizations and resulting in a hybrid "Custom" theme.</b> 
+Notice that `conhost --headless` allows for complete invisibility of the console window. <b>It is advisable to always add the "On Workstation Unlock" trigger to the task. When the workstation is locked, the task may be unable to apply the theme fully, leaving out slideshow customizations and resulting in a hybrid "Custom" theme.</b> 
 
 7) When triggered, the task will then run the script `at.ps1`. The script itself will schedule the next temporary task ("Sunrise Theme" or "Sunset theme") to run at the next required theme change time, whether set by the user or identified through user location. These task will be overwritten as a matter of course, to avoid clutter.
 
