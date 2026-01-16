@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
 	Changes the active Windows theme based on a predefined/daylight schedule. Works in Windows 10/11.
 
@@ -20,16 +20,7 @@
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	MAJOR UPDATE:
-	- Added parameters to control script functions
-	- Added the ability to move the slideshow to the next wallpaper
-	- Added a native OFFLINE sunrise/sunset calculation system
-	- Added a Desktop CONTEXT MENU to control the slideshow or theme
-	- Fixed a problem where wallpapers would not change if a task was created without the need to change theme
-	- Fixed geolocation (again)
-	- Added verification of the config file to the setup script
-	- Improved the Rainmeter sample skin
-	- Many minor fixes
+	- Fixed a parsing error in the Setup script
 #>
 
 # ============ Script Parameters ==============
@@ -43,7 +34,7 @@ param (
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.45"
+	$scriptVersion = "1.0.46"
 
 # ============= Config file ==============
 
@@ -649,7 +640,7 @@ param (
 		$newColor = if ($ThemeMode -eq "dark") { 16777215 } else { 0 }
 
 		# Portable Mode Method
-		
+
 		if ($tClockPath -and (Test-Path $tClockPath)) {
 
 			$iniPath = Join-Path (Split-Path -Parent $tClockPath) "T-Clock.ini"
@@ -696,7 +687,7 @@ param (
 						Write-Log "Registry update failed: $_"
 					}
 				}
-			} 
+			}
 		}
 
 		# Restart T-Clock
@@ -866,16 +857,16 @@ param (
 	function Invoke-AsAdmin {
 		if (-Not (Test-IsAdmin)) {
 			Write-Log "Requesting elevation. Forwarding parameters..." -verboseMessage $true
-			
+
 			# We use $script:PSBoundParameters to reach outside the function's scope
 			$paramsToPass = $script:PSBoundParameters.Keys | ForEach-Object { "-$_" }
-			
+
 			$argList = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$PSCommandPath`"") + $paramsToPass
 
 			try {
 				# Added -WindowStyle Hidden here to keep the secondary window from "flashing"
 				Start-Process -FilePath "powershell.exe" -ArgumentList $argList -Verb RunAs -WindowStyle Hidden
-				exit 0 
+				exit 0
 			} catch {
 				Write-Log "Elevation failed: $_" -Level Error
 				exit 1
@@ -1594,7 +1585,7 @@ try {
         $wallPath = if ($isLight) { $wallLightPath } else { $wallDarkPath }
 
         & $workerPath -Path $wallPath -InformationAction Continue
-        
+
 		# we can reset the task to restart the timer only if admin
         if (Test-IsAdmin) {
             Set-WallpaperRotationTask -Mode $mode
@@ -1602,10 +1593,10 @@ try {
         } else {
             Write-Log "Skipped timer reset (Admin rights required)." -verboseMessage $true
         }
-	
+
 		exit 0
 	}
-	
+
     # Make sure we are Admin
     if ($forceAsAdmin) {
         Write-Log "Running as Administrator." -verboseMessage $true
@@ -1656,5 +1647,6 @@ try {
     Write-Log "" -verboseMessage $true
 
 } catch {
+
     Write-Log "Error: $_"
 }

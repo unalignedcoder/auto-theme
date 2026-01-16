@@ -1,4 +1,4 @@
-﻿
+
 # AUTO THEME
 Powershell script which changes the active Windows theme and Desktop background based on daylight or a predefined schedule. Works in Windows 10/11. 
 
@@ -73,7 +73,12 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 <p>&nbsp;</p>
 
-## Changelog
+
+
+### v1.0.46 (2026-01-16)
+- Fixed a parsing error in the Setup script
+
+
 
 ### v1.0.45 (2026-01-13)
 MAJOR UPDATE:

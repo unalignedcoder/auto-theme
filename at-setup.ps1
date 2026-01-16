@@ -196,6 +196,14 @@ if ($addContextMenu) {
     $parentKey = "HKEY_CLASSES_ROOT\DesktopBackground\Shell\AutoTheme"
     $subKey = "$parentKey\shell"
 
+    # Commands
+    # Next Wallpaper (no console window)
+    $psNext = 'conhost.exe --headless PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command "& {0} -Next"' -f "'$AutoThemeScript'"
+    # Toggle Theme
+    $psToggle = 'PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command "& {0} -Toggle"' -f "'$AutoThemeScript'"
+    # Refresh Schedule
+    $psSched = 'PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command "& {0} -Schedule"' -f "'$AutoThemeScript'"
+
     try {
         # 1. Parent Entry (No changes here)
         New-Item -Path "Registry::$parentKey" -Force | Out-Null
@@ -210,7 +218,7 @@ if ($addContextMenu) {
         New-Item -Path "Registry::$nextPath\command" -Force | Out-Null
         Set-ItemProperty -Path "Registry::$nextPath" -Name "(Default)" -Value "Next background picture"
         Set-ItemProperty -Path "Registry::$nextPath" -Name "Icon" -Value "imageres.dll,-21"
-        $psNext = "conhost.exe --headless PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Next`\""
+        # $psNext = "conhost.exe --headless PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Next`\""
         Set-ItemProperty -Path "Registry::$nextPath\command" -Name "(Default)" -Value $psNext
 
         # 3. Toggle Theme (Middle)
@@ -218,7 +226,7 @@ if ($addContextMenu) {
         New-Item -Path "Registry::$togglePath\command" -Force | Out-Null
         Set-ItemProperty -Path "Registry::$togglePath" -Name "(Default)" -Value "Toggle Theme Now"
         Set-ItemProperty -Path "Registry::$togglePath" -Name "Icon" -Value "themecpl.dll,-1"
-        $psToggle = "PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Toggle`\""
+        # $psToggle = "PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Toggle`\""
         Set-ItemProperty -Path "Registry::$togglePath\command" -Name "(Default)" -Value $psToggle
 
         # 4. Refresh Schedule (Pinned to Bottom)
@@ -229,8 +237,8 @@ if ($addContextMenu) {
         Set-ItemProperty -Path "Registry::$parentKey" -Name "SeparatorBefore" -Value ""
         # This is the trick to move it to the end:
         Set-ItemProperty -Path "Registry::$refreshPath" -Name "Position" -Value "Bottom"
-        
-        $psSched = "PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Schedule`\""
+
+        # $psSched = "PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Schedule`\""
         Set-ItemProperty -Path "Registry::$refreshPath\command" -Name "(Default)" -Value $psSched
 
         Write-Log "Cascading menu reordered: Refresh is now at the bottom."
