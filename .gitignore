@@ -362,4 +362,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Auto Theme runtime state
 /ATLastRun.txt
+/at-state.ini

@@ -10,9 +10,7 @@
 	$themeDark = "Name-of-Dark.theme"
 
 	<# COMPLETE PATH to the `.theme` files. You can use the default path to Windows themes
-	(as proposed in the example below) or a custom path of your choice.
-	You can use `$lightPath = Join-Path $PSScriptRoot $themeLight`
-	if your `.theme` files are located within the script folder.
+	(as proposed in the example below) or a custom path of your choice.	You can use `$lightPath = Join-Path $PSScriptRoot $themeLight` if your `.theme` files are located within the script folder.
 	* Only relevant when `$useThemeFiles = $true` #>
 	$lightPath = Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeLight
 	$darkPath =  Join-Path (Join-Path $Env:LOCALAPPDATA "Microsoft\Windows\Themes") $themeDark
@@ -23,16 +21,13 @@
 	* Only relevant when `$useThemeFiles = $false` #>
 	$noWallpaperChange = $false
 
-	<# Randomize wallpaper - when NOT using `.theme` files.
-	If `$true`, picks a random wallpaper from the wallpaper paths.
+	<# Randomize wallpaper - when NOT using `.theme` files.	If `$true`, picks a random wallpaper from the wallpaper paths. If `$false`, walks the folder in alphabetical order, advancing one picture per slideshow tick or 'Next wallpaper' command, and wrapping around at the end. Light and Dark keep their own place, so each mode resumes where it left off.
 	* Only relevant when `$useThemeFiles = $false` #>
-	$randomizeWallpaper = $true
+	$randomizeWallpaper = $false
 
-	<# Interval at which to randomize wallpapers. This effectively replaces Windows' own slideshow feature.
-	This will create a specific Scheduled task to handle wallpaper changes at the defined interval.
-	Set to "0" to disable this feature.
+	<# Interval at which to randomize wallpapers. This effectively replaces Windows' own slideshow feature.	This will create a specific Scheduled task to handle wallpaper changes at the defined interval.	Set to "0" to disable this feature.
 	* Only relevant when `$useThemeFiles = $false` #>
-	$slideShowInterval = "0" # minutes
+	$slideShowInterval = "20" # minutes
 
     <# Display the wallpaper name when it changes.
     "rainmeter"    - Displays the name as on overlay, via Rainmeter (a 'skin' is provided as example.)
@@ -48,40 +43,48 @@
 
 	<# The Config Name of your Rainmeter skin. 
     This is the relative path from your 'Skins' folder to the folder containing the `.ini` file.
-    Example: If the skin is in 'Skins\AutoTheme\Wallpaper\at.ini', use "AutoTheme\Wallpaper"
-	You can find in the repository a functional example of a skin that shows the wallpaper name at the bottom of the screen. #>
-	$rainmeterSkinName = "AutoTheme\Wallpaper"
-	$rainmeterSkinFile   = "at.ini"
+    Example: If the skin is in 'Skns\AutoTheme\Wallpaper\at.ini', use "AutoTheme\Wallpaper" You can find in the repository a functional example of a skin that shows the wallpaper name at the bottom of the screen. #>
+	$rainmeterSkinName = "auto-theme"
+	$rainmeterSkinFile   = "auto-theme.ini"
 
 	<# Randomize FIRST wallpaper - when using `.theme` files AND shuffling wallpapers.
-	Even if `shuffle=1` is set in a `.theme` file, Windows will always use the first wallpaper in alphabetic order as the first shown.
-	Setting this to `$true` offers more variety as soon as the theme is applied.
-	Be aware that, to this end, a randomly-picked wallpaper file will be temporarily renamed with a `0_at` string prepended to it.
+	Even if `shuffle=1` is set in a `.theme` file, Windows will always use the first wallpaper in alphabetic order as the first shown. Setting this to `$true` offers more variety as soon as the theme is applied.	Be aware that, to this end, a randomly-picked wallpaper file will be temporarily renamed with a `0_at` string prepended to it.
 	* Only relevant when `$useThemeFiles = $true` #>
 	$randomFirst = $true
 
 	<# Paths to the folders for light and dark wallpapers.
-	If `$useThemeFiles = $true`, indicate here the same FOLDER PATHS indicated in the `.theme` files.
-	If `$useThemeFiles = $false`, indicate PATHS to IMAGES OR FOLDERS to be selected for Light and Dark modes. #>
+	If `$useThemeFiles = $true`, indicate here the same FOLDER PATHS indicated in the `.theme` files. Otherwise indicate PATHS to IMAGES OR FOLDERS to be selected for Light and Dark modes. #>
 	$wallLightPath = "C:\Path\to\Light\wallpapers"
 	$wallDarkPath = "C:\Path\to\Dark\wallpapers"
 
 	# Show the wallpaper name in notification
-	$showWallName = $true
+	$showWallName = $false
+
+# ============= Lock screen variables =============
+
+	<# If `$true`, the lock screen picture is changed to match the desktop wallpaper. Requires the default Windows PowerShell up to 5.1, as it relies on a WinRT API not available in PowerShell 7.
+	* Only relevant when `$useThemeFiles = $false` #>
+	$changeLockScreen = $false
+
+	<# If `$true`, the lock screen picture only changes when the theme changes (sunrise, sunset, or manual toggle),
+	and is left alone by the wallpaper slideshow and by the 'Next background picture' command. If `$false`, the lock screen follows every single wallpaper change.
+	* Only relevant when `$changeLockScreen = $true` #>
+	$lockScreenOnThemeSwitchOnly = $false
+
+	<# Windows Spotlight silently overwrites any lock screen picture set by this script. If `$true`, Spotlight is turned off so that the chosen pictures actually stick. Set to `$false` only if you would rather keep Spotlight and manage this yourself.
+	* Only relevant when `$changeLockScreen = $true` #>
+	$disableSpotlight = $true
 
 # ============= Time variables =============
 
 	# Use fixed hours to switch Themes (keeps the script completely offline)
 	$useFixedHours = $false
 
-	<# Fixed hours for theme change (only needed if $useFixedHours = $true).
-	You are free to use 12 or 24 hours formats here. #>
+	<# Fixed hours for theme change (only needed if $useFixedHours = $true). You are free to use 12 or 24 hours formats here. #>
 	$lightThemeTime = "07:00 AM"
 	$darkThemeTime = "07:00 PM"
 
-	<# Set to `$true` to always use a user-defined location.
-	If `$false`, the script will attempt to retrieve location from the system
-	or, failing that, from your ISP, which may not give accurate results. #>
+	<# Set to `$true` to always use a user-defined location. If `$false`, the script will attempt to retrieve location from the system or, failing that, from your ISP, which may not give accurate results. #>
 	$useUserLoc = $false
 
 	<# User-defined coordinates and timezone. You can obtain your coordinates from Google or similar services.
@@ -99,29 +102,22 @@
 # ============= Context menu =============
 
 	<# If `$true`, adds an 'Auto Theme' context menu on desktop.
-	This allows you to show the next wallpaper in the slideshow,
-	quickly switch between Light and Dark modes on demand, 
-	or refresh the Scheduled Tasks.
-	It may requires a restart of Explorer to take effect. #>
+	This allows you to show the next wallpaper in the slideshow, quickly switch between Light and Dark modes on demand,	or refresh the Scheduled Tasks.	It may requires a restart of Explorer to take effect. #>
 	$addContextMenu = $true
 
 # ============= Extra apps variables =============
 
-	<# Sysinternals Process Explorer doesn't automatically change theme when the system theme is changed. Use this variable if you want it to be restarted.
-	If you run Process Explorer as Admin, the script should also run as Admin for this to work.
-	You can use the $forceAsAdmin variable below for the purpose. #>
+	<# Sysinternals Process Explorer doesn't automatically change theme when the system theme is changed. Use this variable if you want it to be restarted.	If you run Process Explorer as Admin, the script should also run as Admin for this to work.	You can use the $forceAsAdmin variable below for the purpose. #>
 	$restartProcexp = $false
 	# If `$true`, Process Explorer will keep Admin rights (inheriting from this script).
 	# If `$false`, it will be restarted as a standard user. All other apps are restarted as standard user.
 	$restartProcexpElevated = $true
 
-	<# Change TrueLaunchBar colors (will cause Explorer to be restarted.)
-	Look into the 'Update-TrueLaunchBar-colors' function for more details #>
+	<# Change TrueLaunchBar colors (will cause Explorer to be restarted.) Look into the 'Update-TrueLaunchBar-colors' function for more details #>
 	$customizeTrueLaunch = $false
 	$trueLaunchIniFilePath = Join-Path $Env:APPDATA "Tordex\True Launch Bar\settings\setup.ini"
 
-	<# Changes color in the T-Clock font, so that it adapts to the current theme.
-	When T-Clock redraws the clock background based on accent color, it may cause the taskbar to crash or flicker. #>
+	<# Changes color in the T-Clock font, so that it adapts to the current theme. When T-Clock redraws the clock background based on accent color, it may cause the taskbar to crash or flicker. #>
 	$tClockPath = "C:\Path\to\T-Clock\Clock64.exe"
 	$updateTClockColor = $false
 	$restartTClockColor = $false # usually not needed
@@ -134,6 +130,10 @@
 	$verbose = $false
 	$lastRunInterval = "5"
 	$waitExplorer = "30"
+
+	<# Refuses a theme switch that comes less than `$lastRunInterval` minutes after the last one.
+	Themes only: 'Next wallpaper' and the slideshow change the wallpaper without touching the
+	theme, so they are never held back by this. #>
 	$checkLastRun = $true
 	$maxLogEntries = "5"
 
@@ -146,7 +146,6 @@
 	# required files
 	$appLogo = Join-Path $PSScriptRoot "at.png"
 	$logFile = Join-Path $PSScriptRoot "at.log"
-	$lastRunFile = Join-Path $PSScriptRoot "atLastRun.txt"
 	$workerPath = Join-Path $PSScriptRoot "at-wallpaper.ps1"
 
 	<# Console Visibility Settings when run from Task Scheduler:
@@ -155,37 +154,5 @@
 	* "wt"- Opens in Windows Terminal (using existing window if open) #>
 	$terminalVisibility = "ch"
 	
-    # Write Wallpaper name in Registry for other apps or scripts to read
+    <# Where to save wallpaper name and path, the last seen wall in the slideshow, and the time of the last run. If `$true`it saves to the Registry, otherwise goes to `at-state.ini`, next to this script. Note that `$howToDisplayName = "rainmeter"` overrides this and forces the Registry, because Rainmeter cannot read a file. #>
     $writeRegistry = $false
-
-# ============= Shared Win32 API & Power Management, for wallpaper changing ==============
-
-$Win32Code = @'
-using System;
-using System.Runtime.InteropServices;
-
-public class WinAPI {
-    [DllImport("user32.dll", CharSet = CharSet.Auto)]
-    public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    public static extern IntPtr SendMessageTimeout(
-        IntPtr hWnd, uint Msg, IntPtr wParam, string lParam,
-        uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-    public static extern uint SetThreadExecutionState(uint esFlags);
-}
-'@
-
-# Load the API class if not already present
-if (-not ([System.Management.Automation.PSTypeName]'WinAPI').Type) {
-    Add-Type -TypeDefinition $Win32Code -ErrorAction SilentlyContinue | Out-Null
-}
-
-# Apply Background Power State immediately upon loading config
-# This prevents any script using this config from blocking monitor/system sleep.
-try {
-    [WinAPI]::SetThreadExecutionState([System.UInt32]2147483648) | Out-Null
-} catch { }
-

@@ -1,7 +1,8 @@
 name: Create Release
 
-# This Workflow automatically creates a Github Release when new tags are pushed to the repository.
-# This is for VisualStudio-Github interaction only. It does not affect script functionality.
+# This Workflow automatically creates a Github Release when a push to main carries a
+# version number that has no tag yet. It creates the tag itself; it is not triggered by
+# tag pushes. It does not affect script functionality.
 
 on:
   push:
@@ -27,8 +28,8 @@ jobs:
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor }}@tuscoss.com"
 
-    # the version number in the script is being automatically updated
-    # via a post-commit hook in VS, here we only need to extract it
+    # the version number in the script is bumped locally by git-bump
+    # (B:\scripts\git-bump\gp.ps1), here we only need to extract it
     - name: Extract version from script
       id: extract_version
       run: |
@@ -57,7 +58,9 @@ jobs:
         git push origin "v$NEW_VERSION"
 
     # extract release notes from the script .NOTES section
+    # skipped when the tag already exists, since no release will be made
     - name: Extract release notes from script
+      if: env.TAG_EXISTS == 'false'
       run: |
         # --- add 4 spaces to the start of the warning (formats as code)
         # WARNING_MESSAGE="    (Make sure to edit the new \`at-config.ps1\` file before overwriting the old one.)"
@@ -82,10 +85,13 @@ jobs:
         echo "EOF" >> $GITHUB_ENV
 
     # create the zip file for the release
+    # skipped when the tag already exists, since no release will be made
     - name: Zip files
+      if: env.TAG_EXISTS == 'false'
       run: |
         mkdir -p release
         cp at.ps1 at-config.ps1 at-setup.ps1 at.png at-wallpaper.ps1 AutoTheme.ps1 LICENSE README.md release/
+        cp -r rainm release/   # sample Rainmeter skin
         zip -r release-v$NEW_VERSION.zip release/
         echo "ZIP_FILE=release-v$NEW_VERSION.zip" >> $GITHUB_ENV
 

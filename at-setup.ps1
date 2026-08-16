@@ -3,7 +3,18 @@
     Initial Setup script for Auto Theme.
 .DESCRIPTION
     Validates configuration and creates the main Scheduled Task for Auto Theme.
+    Run with -Uninstall to remove every task and Registry entry the script creates.
 #>
+
+# ============ Script Parameters ==============
+
+param (
+    [switch]$Uninstall,   # Remove everything Auto Theme installed, then exit
+
+    <# Internal. The SID of the user who started the un-elevated instance, handed to the
+    elevated one so that we clean up the right HKCU hive. See the elevation check below. #>
+    [string]$UserSid
+)
 
 # ============= Path Variables ==============
 $ConfigPath = Join-Path $PSScriptRoot "at-config.ps1"
@@ -69,7 +80,29 @@ function Invoke-ConfigValidation {
         if (-not (Test-Path $wallDarkPath)) { $errors += "Dark Wallpaper path missing: $wallDarkPath" }
     }
 
-    # 4. Check Extra Apps
+    # 4. Check Lock Screen
+    # These are warnings, not errors: they do not stop the setup, but the feature will misbehave.
+    if ($changeLockScreen) {
+
+        # The WinRT API used to set the lock screen does not exist in PowerShell 7
+        if ($PSVersionTable.PSEdition -eq 'Core') {
+            LogThis "Lock screen changes require Windows PowerShell 5.1. Run the scripts with 'powershell.exe', not 'pwsh.exe'." -Level Warning
+        }
+
+        <# If Spotlight is left on, Windows quietly puts its own pictures back,
+        which makes it look as though the script is not working. #>
+        if (-not $disableSpotlight) {
+
+            $cdmPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+            $rotating = (Get-ItemProperty -Path $cdmPath -Name "RotatingLockScreenEnabled" -ErrorAction SilentlyContinue).RotatingLockScreenEnabled
+
+            if ($rotating -eq 1) {
+                LogThis "Windows Spotlight is on while `$disableSpotlight is `$false. Windows will overwrite the lock screen pictures set by this script." -Level Warning
+            }
+        }
+    }
+
+    # 5. Check Extra Apps
     if ($updateTClockColor -and -not (Test-Path $tClockPath)) {
         $errors += "T-Clock enabled but executable not found: $tClockPath"
     }
@@ -158,12 +191,167 @@ function Register-AutoThemeTask {
     }
 }
 
+<# Delete one Registry key and everything under it, but only if it is actually there.
+Takes a 'Registry::' path, so that HKCR and a hive addressed by SID both work. #>
+function Remove-RegKeyIfPresent {
+    param (
+        [string]$Path,
+        [string]$Description
+    )
+
+    try {
+
+        if (-not (Test-Path $Path)) {
+            LogThis "$Description : not present."
+            return $false
+        }
+
+        Remove-Item -Path $Path -Recurse -Force -ErrorAction Stop
+        LogThis "Removed $Description" -Level Success
+        return $true
+
+    } catch {
+
+        LogThis "Could not remove $Description : $_" -Level Error
+        return $false
+    }
+}
+
+<# Take out everything Auto Theme has ever put on the machine.
+We look for each item rather than trusting the current configuration: someone who has since
+turned `$writeRegistry` or `$addContextMenu` back off still has the entries an earlier run
+created, and those are exactly the ones they are asking us to clear away. #>
+function Invoke-AutoThemeUninstall {
+
+    # Anchored, unlike the reinstall prompt below: this one throws things away
+    $choice = Read-Host "Remove all Auto Theme scheduled tasks and Registry entries? (Y/N)"
+    if ($choice -notmatch '^\s*y') {
+        LogThis "Uninstall aborted by user." -Level Info
+        return
+    }
+
+    $removed = 0
+
+    # ---- 1. Scheduled Tasks ----
+    <# The main task comes from this script, the rest are created by at.ps1 as it runs.
+    All six use fixed names, so we can just walk the list. #>
+    $taskNames = @(
+        "Auto Theme",
+        "Auto Theme wallpaper changer",
+        "Auto Theme sunrise",
+        "Auto Theme sunset",
+        "Auto Theme fixed sunrise",
+        "Auto Theme fixed sunset"
+    )
+
+    foreach ($name in $taskNames) {
+
+        try {
+
+            if (-not (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue)) {
+                LogThis "Task '$name' : not present."
+                continue
+            }
+
+            Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction Stop
+            LogThis "Removed task '$name'" -Level Success
+            $removed++
+
+        } catch {
+
+            # One task we cannot touch must not stop us clearing the others
+            LogThis "Could not remove task '$name' : $_" -Level Error
+        }
+    }
+
+    # ---- 2. Context menu ----
+    if (Remove-RegKeyIfPresent -Path "Registry::HKEY_CLASSES_ROOT\DesktopBackground\Shell\AutoTheme" `
+                               -Description "desktop context menu") { $removed++ }
+
+    # Left behind by the old context-menu.reg, from before the cascading menu
+    if (Remove-RegKeyIfPresent -Path "Registry::HKEY_CLASSES_ROOT\DesktopBackground\Shell\AutoThemeNext" `
+                               -Description "legacy 'Next wallpaper' menu entry") { $removed++ }
+
+    # ---- 3. Per-user entries ----
+    <# Normally this is simply HKCU. But when the UAC prompt was answered with a different
+    Administrator account, our HKCU is that account's, and the entries we want belong to the
+    user who launched us, so we reach their hive through the SID they passed us. #>
+    $userHives = @("Registry::HKEY_CURRENT_USER")
+
+    if ($UserSid -and $UserSid -ne ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value)) {
+        $userHives += "Registry::HKEY_USERS\$UserSid"
+    }
+
+    foreach ($hive in $userHives) {
+
+        # The state key, whatever `$writeRegistry` happens to say today
+        $tuscoss = "$hive\SOFTWARE\Tuscoss"
+
+        if (Remove-RegKeyIfPresent -Path "$tuscoss\AutoTheme" -Description "state key ($tuscoss\AutoTheme)") { $removed++ }
+
+        <# Tidy away our own parent key, but only once it holds nothing else:
+        another Tuscoss product may well be keeping its settings in there. #>
+        try {
+
+            if (Test-Path $tuscoss) {
+
+                $key = Get-Item -Path $tuscoss
+                if ($key.SubKeyCount -eq 0 -and $key.ValueCount -eq 0) {
+                    Remove-Item -Path $tuscoss -Force -ErrorAction Stop
+                    LogThis "Removed empty parent key ($tuscoss)" -Level Success
+                }
+            }
+
+        } catch {
+
+            LogThis "Could not remove parent key ($tuscoss) : $_" -Level Error
+        }
+
+        <# Where the wallpaper name used to live, before it moved into the state key.
+        Windows does not put this value there itself, so it is safe to clear. #>
+        try {
+
+            $desktop = "$hive\Control Panel\Desktop"
+
+            if ((Test-Path $desktop) -and (Get-ItemProperty -Path $desktop -Name "WallpaperName" -ErrorAction SilentlyContinue)) {
+
+                Remove-ItemProperty -Path $desktop -Name "WallpaperName" -Force -ErrorAction Stop
+                LogThis "Removed legacy WallpaperName value ($desktop)" -Level Success
+                $removed++
+            }
+
+        } catch {
+
+            LogThis "Could not remove legacy WallpaperName value : $_" -Level Error
+        }
+    }
+
+    # ---- 4. Summary ----
+    if ($removed -eq 0) {
+        LogThis "Nothing left to remove: Auto Theme was already uninstalled." -Level Info
+    } else {
+        LogThis "Uninstall complete. $removed item(s) removed." -Level Success
+    }
+
+    LogThis "The script folder is left as it is. Delete it, along with 'at-state.ini' and the log files, to finish." -Level Info
+}
+
 # ============= RUNTIME ==============
 
 # 1. Elevation Check
 if (-not (Test-AdminRights)) {
     Write-Host "Requesting Administrator privileges..." -ForegroundColor Yellow
-    Start-Process "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+
+    <# Pass our own SID along. If the user answers the UAC prompt with a different
+    Administrator account, the elevated instance gets that account's HKCU, and the state key
+    we are asked to remove lives in this one. Uninstall reads the hive by SID instead. #>
+    $callerSid = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+
+    # Arguments do not survive a plain relaunch, so -Uninstall has to be forwarded by hand
+    $relaunchArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`" -UserSid $callerSid"
+    if ($Uninstall) { $relaunchArgs += " -Uninstall" }
+
+    Start-Process "powershell.exe" -ArgumentList $relaunchArgs -Verb RunAs
     Exit 0
 }
 
@@ -172,7 +360,35 @@ if (-not (Test-Path $ConfigPath)) {
     Write-Error "at-config.ps1 not found. Please create it first."
     Pause; Exit 1
 }
+
+<# Loading these files normally creates the state store as a side effect. When uninstalling we
+want the settings only: creating the key or the ini here, seconds before removing them, would
+leave a brand new 'at-state.ini' sitting in a folder we have just cleaned out. #>
+$skipStateProvision = $Uninstall.IsPresent
+
 . $ConfigPath
+
+<# The state store lives in the worker, which we dot-source for its definitions: with no
+`-Path` it stops after them rather than changing any wallpaper. Provisioning the store is
+part of setting Auto Theme up, so a missing worker is worth a warning, but not a refusal:
+everything else this script installs is still worth having. #>
+if (Test-Path $workerPath) {
+    . $workerPath
+} else {
+    LogThis "Worker script not found at $workerPath. The state store will be created on the first run instead." -Level Warning
+}
+
+<# Uninstall runs before validation on purpose. A half-edited config, with theme or wallpaper
+paths that no longer exist, is precisely when someone reaches for uninstall, and the validation
+below would turn them away. #>
+if ($Uninstall) {
+
+    LogThis "===== Auto Theme Uninstall Started ====="
+    Invoke-AutoThemeUninstall
+    LogThis "===== Uninstall Finished ====="
+
+    Pause; Exit 0
+}
 
 LogThis "===== Auto Theme Setup Started ====="
 
@@ -191,7 +407,7 @@ if (-not (Test-Path $AutoThemeScript)) {
 # ============ Context Menu Setup ============
 if ($addContextMenu) {
 
-    Write-Log "Installing 'Auto Theme' cascading desktop menu..."
+    LogThis "Installing 'Auto Theme' cascading desktop menu..."
 
     $parentKey = "HKEY_CLASSES_ROOT\DesktopBackground\Shell\AutoTheme"
     $subKey = "$parentKey\shell"
@@ -241,9 +457,9 @@ if ($addContextMenu) {
         # $psSched = "PowerShell.exe -ExecutionPolicy Bypass -NoProfile -Command `\"& '$AutoThemeScript' -Schedule`\""
         Set-ItemProperty -Path "Registry::$refreshPath\command" -Name "(Default)" -Value $psSched
 
-        Write-Log "Cascading menu reordered: Refresh is now at the bottom."
+        LogThis "Cascading menu reordered: Refresh is now at the bottom."
     } catch {
-        Write-Log "Failed to install ordered context menu: $_" -Level Error
+        LogThis "Failed to install ordered context menu: $_" -Level Error
     }
 
 } else {

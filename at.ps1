@@ -3,9 +3,10 @@
 	Changes the active Windows theme based on a predefined/daylight schedule. Works in Windows 10/11.
 
 .DESCRIPTION
-	This highly-sophisticated Powershell script automatically switches the Windows Theme depending on Sunrise and Sunset, or hours set by the user.
+	This powerful Powershell script automatically switches Windows Theme/color depending on Sunrise and Sunset, or hours set by the user.
 	It can activate Windows Dark and Light mode directly, also handling wallpaper changes natively.
-	It can also activate given `.theme` files, which may allow for a higher degree of customization and compatibility.
+	Alternatively, it can activate `.theme` files, which may allow for a higher degree of customization and compatibility.
+	It includes a Desktop context menu for main operations, such as "Toggle theme" or "Next wallpaper".
 	The script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 	It will automatically create the next temporary task for the next daylight event.
 	Such tasks ("Auto Theme sunrise" and "Auto Theme sunset") will be overwritten as a matter of course to avoid clutter.
@@ -13,14 +14,21 @@
 	It can stay completely offline operating on fixed hours provided by the user.
 	When ran as the command `./at.ps1` from terminal or desktop shortcut, the script will only toggle between themes.
 	IMPORTANT: Edit `at-config.ps1` to configure this script. The file contains all necessary explanations.
-	OPTIONALLY: Run `./at-setup.ps1` to create the main Scheduled Task and verify the configuration is in place.
+	IMPORTANT: Run `./at-setup.ps1` to create the main Scheduled Task, context menu and verify the configuration is in place.
 	For more information, refer to the README file.
 
 .LINK
 	https://github.com/unalignedcoder/auto-theme/
 
 .NOTES
-	- Fixed a parsing error in the Setup script
+	- Added the ability to change the Lock Screen picture along with the Desktop background
+	- The setup script now warns when the feature is enabled under PowerShell 7, or when Windows Spotlight is left on
+	- Fixed `$randomizeWallpaper = $false`, which used to freeze the slideshow on a single picture. When not randomized, now Light and Dark walls each keep their own place in the sequence, so switching mode resumes that folder where it left off rather than restarting it
+	- The script now keeps some specific variables either in Registry or an .ini file (not compatible with rainmeter). See `at-config.ps1` for more info
+	- The "Wallpaper name" registry entry has been moved to a differen registry key. Make sure you update your rainmeter skin accordingly
+	- Extra apps are no longer restarted and no notification is sent when nothing has actually changed
+	- The setup script has been improved to include an `-Uninstall` switch, which cleans all leftovers
+	- Minor fixes and code polishing
 #>
 
 # ============ Script Parameters ==============
@@ -34,7 +42,7 @@ param (
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.46"
+	$scriptVersion = "1.0.47"
 
 # ============= Config file ==============
 
@@ -232,27 +240,39 @@ param (
 
 		Write-Log "Checking if script was run in the last $lastRunInterval minutes"  -verboseMessage $true
 
-		if (Test-Path $lastRunFile) {
+		$stored = Get-AtState -Name "lastRun"
+		if ([string]::IsNullOrWhiteSpace($stored)) { return }
 
-			$lastRun = Get-Content $lastRunFile | Out-String
-			$lastRun = [DateTime]::Parse($lastRun)
-			$now = Get-Date
+		<# Stored round-trip safe, so that a machine whose locale changed can still read
+		back its own timestamp. Anything unreadable counts as 'never run'. #>
+		try {
 
-			$timeSinceLastRun = $now - $lastRun
+			$lastRun = [DateTime]::Parse($stored, [System.Globalization.CultureInfo]::InvariantCulture)
 
-			if ($timeSinceLastRun.TotalMinutes -lt $lastRunInterval) {
+		} catch {
 
-				Write-Log "Script was run within the last $lastRunInterval minutes. Exiting."
-				exit
-			}
+			Write-Log "Could not read the last run time. Treating this as a first run." -verboseMessage $true
+			return
+		}
+
+		$timeSinceLastRun = (Get-Date) - $lastRun
+
+		if ($timeSinceLastRun.TotalMinutes -lt $lastRunInterval) {
+
+			Write-Log "Theme was switched within the last $lastRunInterval minutes. Skipping theme change."
+			exit
 		}
 	}
 
 	# Update the last run time
 	function Update-LastRunTime {
 
-		$now = Get-Date
-		$now | Out-File -FilePath $lastRunFile -Force
+		Set-AtState -Name "lastRun" -Value (Get-Date).ToString("o")
+
+		# Tidy away the file this used to live in, left over from earlier versions
+		if ($PSScriptRoot) {
+			Remove-Item -LiteralPath (Join-Path $PSScriptRoot "atLastRun.txt") -Force -ErrorAction SilentlyContinue
+		}
 	}
 
 	# Check whether wallpaper shuffle is enabled in .theme file
@@ -1178,7 +1198,7 @@ param (
             Write-Log "Applying $mode mode" -verboseMessage $true
 
 			# Set the wallpaper, grab its name
-			$selectedWall = & $workerPath -Path $wallPath -InformationAction Continue
+			$selectedWall = & $workerPath -Path $wallPath -ThemeSwitch -InformationAction Continue
 
             Set-ThemeMode -Mode $Mode
 
@@ -1300,7 +1320,6 @@ param (
                 Unregister-ScheduledTask -TaskName "Auto Theme fixed sunrise" -Confirm:$false
                 Write-Log "Removed fixed sunrise task as we're using dynamic times" -verboseMessage $true
             }
-
             if (Test-IfTaskExists "Auto Theme fixed sunset") {
                 Unregister-ScheduledTask -TaskName "Auto Theme fixed sunset" -Confirm:$false
                 Write-Log "Removed fixed sunset task as we're using dynamic times" -verboseMessage $true
@@ -1417,10 +1436,14 @@ param (
 			# if using theme files
             if ($useThemeFiles) {
 
-				# is the theme already active?
+				# is the theme already active? log, set wall, register task and exit
                 if ($CurrentTheme -match $themeLight) {
 
-					$mainLine =  "$themeLight is already active. Next trigger at: $NextTriggerTime"
+					# theme already set
+                    Write-Log "$themeLight is already active. Next trigger at: $NextTriggerTime"
+
+	                # Set the wallpaper, grab its name
+	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
 
                 } else {
 
@@ -1432,17 +1455,30 @@ param (
 	                # line for log and notification
 	                $mainLine = "$themeLight activated. Next trigger at: $NextTriggerTime"
 
-				}
+	                # Set the wallpaper, grab its name
+	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
 
-                # Set the wallpaper, grab its name
-                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
+		            Update-Apps -themeMode $mode
+		            Write-Log $mainLine
+
+		            # Send notification
+		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
+				}
 
 			# if not using theme files
             } else {
 
                 if ($NativeValue -eq 1) {
 
-					$mainLine =  "$mode mode is already active. Next trigger at: $NextTriggerTime"
+					# theme already set
+                    Write-Log "$mode mode is already active. Next trigger at: $NextTriggerTime"
+
+	                # Set the wallpaper, grab its name
+	                $selectedWall = & $workerPath -Path $wallLightPath -ThemeSwitch -InformationAction Continue
+
+	                # Start rotating wallpapers via task
+	                Set-WallpaperRotationTask -Mode $mode
 
                 } else {
 
@@ -1454,20 +1490,20 @@ param (
 	                # line for log and notification
 	                $mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
 
+	                # Set the wallpaper, grab its name
+	                $selectedWall = & $workerPath -Path $wallLightPath -ThemeSwitch -InformationAction Continue
+
+	                # Start rotating wallpapers via task
+	                Set-WallpaperRotationTask -Mode $mode
+
+		            Update-Apps -themeMode $mode
+		            Write-Log $mainLine
+
+		            # Send notification
+		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
 				}
-
-                # Set the wallpaper, grab its name
-                $selectedWall = & $workerPath -Path $wallLightPath -InformationAction Continue
-
-                # Start rotating wallpapers via task
-                Set-WallpaperRotationTask -Mode $mode
             }
-
-            Update-Apps -themeMode $mode
-            Write-Log $mainLine
-
-            # Send notification
-            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
 
             # Register the task
             if (-not $useFixedHours) {
@@ -1489,7 +1525,11 @@ param (
 				# is the theme already active?
                 if ($CurrentTheme -match $themeDark) {
 
-                    $mainLine =  "$themeDark is already active. Next trigger at: $NextTriggerTime"
+                    # theme already set. we log, register task and quietly exit
+                    Write-Log "$themeDark is already active. Next trigger at: $NextTriggerTime"
+
+	                # Set the wallpaper, grab its name
+	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
 
                 } else {
 
@@ -1501,17 +1541,31 @@ param (
 	                # line for log and notification
 	                $mainLine = "$themeDark activated. Next trigger at: $NextTriggerTime"
 
+	                # Set the wallpaper, grab its name
+	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
+
+		            Update-Apps -themeMode $mode
+		            Write-Log $mainLine
+
+		            # Send notification
+		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
                 }
 
-                # Set the wallpaper, grab its name
-                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
 
 			# if not using theme files
             } else {
 
                 if ($NativeValue -eq 0) {
 
-                    $mainLine =  "$mode mode is already active. Next trigger at: $NextTriggerTime"
+					# theme already set. we log, register task and quietly exit
+                    Write-Log "$mode mode is already active. Next trigger at: $NextTriggerTime"
+
+	                # Set the wallpaper, grab its name
+	                $selectedWall = & $workerPath -Path $wallDarkPath -ThemeSwitch -InformationAction Continue
+
+	                # Start rotating wallpapers via task
+	                Set-WallpaperRotationTask -Mode $mode 
 
                 } else {
 
@@ -1523,20 +1577,19 @@ param (
 	                # line for log and notification
 	                $mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
 
-				}
+	                # Set the wallpaper, grab its name
+	                $selectedWall = & $workerPath -Path $wallDarkPath -ThemeSwitch -InformationAction Continue
 
-                # Set the wallpaper, grab its name
-                $selectedWall = & $workerPath -Path $wallDarkPath -InformationAction Continue
+	                # Start rotating wallpapers via task
+	                Set-WallpaperRotationTask -Mode $mode   
 
-                # Start rotating wallpapers via task
-                Set-WallpaperRotationTask -Mode $mode           
+		            Update-Apps -themeMode $mode
+		            Write-Log $mainLine
+
+		            # Send notification
+		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+				}       
 			}
-
-            Update-Apps -themeMode $mode
-            Write-Log $mainLine
-
-            # Send notification
-            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
 
             # Register the task
             if (-not $useFixedHours) {
@@ -1557,6 +1610,15 @@ try {
     }
     . $ConfigPath
 
+	<# Load the worker for its shared machinery: the Win32 API declarations and the state
+	storage functions. Dot-sourced with no `-Path`, it defines them and returns without
+	touching the wallpaper. #>
+    if (-Not (Test-Path $workerPath)) {
+        Write-Error "Worker script not found: $workerPath"
+        Exit 1
+    }
+    . $workerPath
+
     # Cleanup log file
     if ($trimLog -and -Not (Test-TerminalSession)) {
         Limit-LogHistory -logFilePath $logFile -maxSessions $maxLogEntries
@@ -1568,13 +1630,9 @@ try {
     Write-Log "$timestamp === Auto-Theme script started (Version: $scriptVersion)"
 
 
-	# Failsafe to avoid running the script too often
-    if ($checkLastRun) { Test-LastRunTime }
-    Update-LastRunTime
-
 	# ======= Process script parameters =======
 
-	# 1. Only Wallpaper changing
+	# 1. Only Wallpaper changing and exit
     if ($Next) {
 
         Write-Log "Loading 'Next Wallpaper'." -verboseMessage $true
@@ -1603,6 +1661,13 @@ try {
 
         Invoke-AsAdmin
     }
+
+	<# Failsafe against theme switches piling up on top of each other. Deliberately below the
+	'Next wallpaper' branch, which only moves the slideshow along and has no theme to protect,
+	and below the elevation call, so that the relaunched elevated instance is the one that reads
+	and stamps the clock. #>
+    if ($checkLastRun) { Test-LastRunTime }
+    Update-LastRunTime
 
 	# Restart Theme service
     if ($restartThemeService) { Restart-ThemeService }
