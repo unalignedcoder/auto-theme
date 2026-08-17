@@ -80,23 +80,11 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 ## Changelog
 
 ### v1.0.48 (2026-08-17)
-- Added the ability to change the Lock Screen picture along with the Desktop background
+- Added the ability to change the **Lock Screen picture** along with the Desktop background
 - The setup script now warns when the feature is enabled under PowerShell 7, or when Windows Spotlight is left on
 - Fixed `$randomizeWallpaper = $false`, which used to freeze the slideshow on a single picture. When not randomized, now Light and Dark walls each keep their own place in the sequence, so switching mode resumes that folder where it left off rather than restarting it
 - The script now keeps some specific variables either in Registry or an .ini file (not compatible with rainmeter). See `at-config.ps1` for more info
-- The "Wallpaper name" registry entry has been moved to a differen registry key. Make sure you update your rainmeter skin accordingly
-- Extra apps are no longer restarted and no notification is sent when nothing has actually changed
-- The setup script has been improved to include an `-Uninstall` switch, which cleans all leftovers
-- Minor fixes and code polishing
-
-
-
-### v1.0.47 (2026-08-16)
-- Added the ability to change the Lock Screen picture along with the Desktop background
-- The setup script now warns when the feature is enabled under PowerShell 7, or when Windows Spotlight is left on
-- Fixed `$randomizeWallpaper = $false`, which used to freeze the slideshow on a single picture. When not randomized, now Light and Dark walls each keep their own place in the sequence, so switching mode resumes that folder where it left off rather than restarting it
-- The script now keeps some specific variables either in Registry or an .ini file (not compatible with rainmeter). See `at-config.ps1` for more info
-- The "Wallpaper name" registry entry has been moved to a differen registry key. Make sure you update your rainmeter skin accordingly
+- The "Wallpaper name" registry entry has been moved to a different registry key. Make sure you update your rainmeter skin accordingly
 - Extra apps are no longer restarted and no notification is sent when nothing has actually changed
 - The setup script has been improved to include an `-Uninstall` switch, which cleans all leftovers
 - Minor fixes and code polishing
