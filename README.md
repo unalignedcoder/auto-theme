@@ -9,29 +9,6 @@ Powershell script which changes the active Windows theme and Desktop background 
 
 Upon slideshow changes, it can <ins>display the name of the wallpaper</ins> in a notification or Rainmeter skin.
 
-Wallpapers can be shown in <ins>random or alphabetical order</ins>, set with `$randomizeWallpaper`. In alphabetical order the slideshow advances one picture per interval, or per 'Next wallpaper' command, and Light and Dark each remember their own place, so switching mode resumes that folder's sequence rather than restarting it.
-
-To do this the script keeps a little bookkeeping of its own: the current wallpaper name and path, where each mode has got to, and the time of the last run. The `$writeRegistry` variable decides where it lives:
-
-| `$writeRegistry` | Where the state is kept |
-| --- | --- |
-| `$true` | The Registry, under `HKCU:\SOFTWARE\Tuscoss\AutoTheme`, where other apps or scripts can read it. |
-| `$false` | The file `at-state.ini`, next to the script. |
-
-Setting `$howToDisplayName = "rainmeter"` overrides this and forces the Registry, since a Rainmeter Registry measure has no way of reading a file.
-
-A sample Rainmeter skin is included in the `rainm` folder. It already reads the current location, `HKCU:\SOFTWARE\Tuscoss\AutoTheme\wallpaperName`; skins written against the old `Control Panel\Desktop\WallpaperName` value need updating to match.
-
-It can also <ins>change the Lock Screen picture</ins> to match the Desktop background, so that the two stay in step. This is off by default and controlled by three variables in the config file:
-
-| Variable | Effect |
-| --- | --- |
-| `$changeLockScreen` | Set to `$true` to have the Lock Screen picture follow the Desktop background. |
-| `$lockScreenOnThemeSwitchOnly` | If `$true`, the Lock Screen only changes at sunrise/sunset or on a manual toggle, and is left alone by the slideshow and by the 'Next wallpaper' command. If `$false`, it follows every single background change. |
-| `$disableSpotlight` | Windows Spotlight silently puts its own pictures back on the Lock Screen. Leave this at `$true` so that the chosen pictures actually stick. |
-
-This uses the same API as the Windows Settings app, so it requires no additional privileges and does not grey out any of the Lock Screen options in Settings. It does require Windows PowerShell 5.1, which is what the scheduled tasks and the context menu use anyway; under PowerShell 7 the feature simply skips itself.
-
 Alternatively, it can work by loading `.theme` files[^1]. This may allow for a higher degree of customization and compatibility on certain systems. 
 If using `.theme` files and the standard Windows slideshow, displaying wallpaper names is still possible using my [companion script](https://github.com/unalignedcoder/wallpaper-name-notification).
 
@@ -88,16 +65,8 @@ For convenience, a shortcut to the script can be created and placed on the deskt
 <br /><sup>A Windows shortcut can be created to directly toggle the theme.</sup></p>
 
 ## Uninstall
-Run `./at-setup.ps1 -Uninstall` to remove everything the script has put on the system. It asks for confirmation, requests system privileges if not already running as admin, and then takes out:
-
-- all six scheduled tasks: "Auto Theme", "Auto Theme wallpaper changer", "Auto Theme sunrise" and "sunset", and the "fixed" pair used by `$useFixedHours`;
-- the desktop context menu, under `HKEY_CLASSES_ROOT\DesktopBackground\Shell\AutoTheme`;
-- the state key `HKCU:\SOFTWARE\Tuscoss\AutoTheme`, and its `Tuscoss` parent when nothing else is left in it;
-- leftovers from earlier versions: the old `AutoThemeNext` menu key and the retired `HKCU:\Control Panel\Desktop\WallpaperName` value.
-
-Each item is looked for rather than assumed, so entries created by an earlier run are still removed after `$writeRegistry` or `$addContextMenu` have been switched back off. Running it twice is harmless.
-
-The script folder itself is left alone: delete it, along with `at-state.ini` and the log files, to finish. Windows settings the script may have changed, such as the theme currently in use or Windows Spotlight when `$disableSpotlight` is on, are also left as they are, and can be put back from the Settings app.
+Run `./at-setup.ps1 -Uninstall` to remove everything the script has put on the system. It asks for confirmation, requests system privileges if not already running as admin.
+The script folder itself is left alone: delete it, along with `at-state.ini` and the log files, to finish. System settings that the script may have changed, such as the theme currently in use or Windows Spotlight are also left as they are, and can be put back from Windows Settings.
 
 ## Extra apps
 Workarounds have been added for a number of apps which do not toggle theme gracefully when the system theme changes. More details in the Config file.
@@ -109,6 +78,18 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 <p>&nbsp;</p>
 
 ## Changelog
+
+### v1.0.48 (2026-08-17)
+- Added the ability to change the Lock Screen picture along with the Desktop background
+- The setup script now warns when the feature is enabled under PowerShell 7, or when Windows Spotlight is left on
+- Fixed `$randomizeWallpaper = $false`, which used to freeze the slideshow on a single picture. When not randomized, now Light and Dark walls each keep their own place in the sequence, so switching mode resumes that folder where it left off rather than restarting it
+- The script now keeps some specific variables either in Registry or an .ini file (not compatible with rainmeter). See `at-config.ps1` for more info
+- The "Wallpaper name" registry entry has been moved to a differen registry key. Make sure you update your rainmeter skin accordingly
+- Extra apps are no longer restarted and no notification is sent when nothing has actually changed
+- The setup script has been improved to include an `-Uninstall` switch, which cleans all leftovers
+- Minor fixes and code polishing
+
+
 
 ### v1.0.47 (2026-08-16)
 - Added the ability to change the Lock Screen picture along with the Desktop background

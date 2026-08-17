@@ -42,7 +42,7 @@ param (
 # ============= Script Version ==============
 
 	# This is automatically updated
-	$scriptVersion = "1.0.47"
+	$scriptVersion = "1.0.48"
 
 # ============= Config file ==============
 
@@ -376,7 +376,7 @@ param (
 				foreach ($wallpaper in $existingRenamedWallpapers) {
 					try {
 						$originalName = $wallpaper.Name -replace '^_0_at_', ''
-						Write-Log "Restoring original name: $($wallpaper.FullName) Ã¢â€ â€™ $originalName" -verboseMessage $true
+						Write-Log "Restoring original name: $($wallpaper.FullName) -> $originalName" -verboseMessage $true
 						# Use only the name in -NewName to avoid path issues
 						Rename-Item -Path $wallpaper.FullName -NewName $originalName -Force -ErrorAction Stop | Out-Null
 					} catch {
@@ -1215,118 +1215,118 @@ param (
     }
 
 	<# Calculate daylight events or pick fixed hours
-    then select the Theme depending on daylight #>
-    function Invoke-ThemeScheduling {
+	then select the Theme depending on daylight #>
+	function Invoke-ThemeScheduling {
 
-        $Now = Get-Date
-        $NowDate = $Now.ToString("yyyy-MM-dd")
+		$Now = Get-Date
+		$NowDate = $Now.ToString("yyyy-MM-dd")
 
-        # Picked times mode
-        if ($useFixedHours) {
+		# Picked times mode
+		if ($useFixedHours) {
 
-            # Parse fixed times as proper DateTime objects
-            try {
+			# Parse fixed times as proper DateTime objects
+			try {
 
-                # Try parsing with various common formats
-                if ($lightThemeTime -match '^\d{1,2}:\d{2}$') {
-                    # 24-hour format (e.g., "07:00")
-                    $timeComponents = $lightThemeTime.Split(':')
-                    $Sunrise = Get-Date -Hour ([int]$timeComponents[0]) -Minute ([int]$timeComponents[1]) -Second 0
-                }
+				# Try parsing with various common formats
+				if ($lightThemeTime -match '^\d{1,2}:\d{2}$') {
+					# 24-hour format (e.g., "07:00")
+					$timeComponents = $lightThemeTime.Split(':')
+					$Sunrise = Get-Date -Hour ([int]$timeComponents[0]) -Minute ([int]$timeComponents[1]) -Second 0
+				}
 
-                elseif ($lightThemeTime -match '^\d{1,2}:\d{2}\s*[AaPp][Mm]$') {
-                    # 12-hour format with AM/PM (e.g., "7:00 AM")
-                    $Sunrise = [DateTime]::ParseExact($lightThemeTime.Trim(), "h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
-                    $Sunrise = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunrise.Hour -Minute $Sunrise.Minute -Second 0
-                }
+				elseif ($lightThemeTime -match '^\d{1,2}:\d{2}\s*[AaPp][Mm]$') {
+					# 12-hour format with AM/PM (e.g., "7:00 AM")
+					$Sunrise = [DateTime]::ParseExact($lightThemeTime.Trim(), "h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
+					$Sunrise = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunrise.Hour -Minute $Sunrise.Minute -Second 0
+				}
 
-                else {
-                    # General fallback parsing
-                    $Sunrise = [DateTime]::Parse($lightThemeTime)
-                    $Sunrise = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunrise.Hour -Minute $Sunrise.Minute -Second 0
-                }
+				else {
+					# General fallback parsing
+					$Sunrise = [DateTime]::Parse($lightThemeTime)
+					$Sunrise = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunrise.Hour -Minute $Sunrise.Minute -Second 0
+				}
 
-                # Same for sunset time
-                if ($darkThemeTime -match '^\d{1,2}:\d{2}$') {
-                    $timeComponents = $darkThemeTime.Split(':')
-                    $Sunset = Get-Date -Hour ([int]$timeComponents[0]) -Minute ([int]$timeComponents[1]) -Second 0
-                }
+				# Same for sunset time
+				if ($darkThemeTime -match '^\d{1,2}:\d{2}$') {
+					$timeComponents = $darkThemeTime.Split(':')
+					$Sunset = Get-Date -Hour ([int]$timeComponents[0]) -Minute ([int]$timeComponents[1]) -Second 0
+				}
 
-                elseif ($darkThemeTime -match '^\d{1,2}:\d{2}\s*[AaPp][Mm]$') {
-                    $Sunset = [DateTime]::ParseExact($darkThemeTime.Trim(), "h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
-                    $Sunset = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunset.Hour -Minute $Sunset.Minute -Second 0
-                }
+				elseif ($darkThemeTime -match '^\d{1,2}:\d{2}\s*[AaPp][Mm]$') {
+					$Sunset = [DateTime]::ParseExact($darkThemeTime.Trim(), "h:mm tt", [System.Globalization.CultureInfo]::InvariantCulture)
+					$Sunset = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunset.Hour -Minute $Sunset.Minute -Second 0
+				}
 
-                else {
-                    $Sunset = [DateTime]::Parse($darkThemeTime)
-                    $Sunset = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunset.Hour -Minute $Sunset.Minute -Second 0
-                }
+				else {
+					$Sunset = [DateTime]::Parse($darkThemeTime)
+					$Sunset = Get-Date -Year $Now.Year -Month $Now.Month -Day $Now.Day -Hour $Sunset.Hour -Minute $Sunset.Minute -Second 0
+				}
 
-                # Set tomorrow's sunrise for overnight calculations
-                $TomorrowSunrise = $Sunrise.AddDays(1)
+				# Set tomorrow's sunrise for overnight calculations
+				$TomorrowSunrise = $Sunrise.AddDays(1)
 
-                Write-Log "Successfully parsed fixed times: Sunrise at $($Sunrise.ToString('HH:mm')), Sunset at $($Sunset.ToString('HH:mm'))" -verboseMessage $true
-            }
+				Write-Log "Successfully parsed fixed times: Sunrise at $($Sunrise.ToString('HH:mm')), Sunset at $($Sunset.ToString('HH:mm'))" -verboseMessage $true
+			}
 
-            catch {
+			catch {
 
-                Write-Log "Error parsing time strings. Using default values." -verboseMessage $true
+				Write-Log "Error parsing time strings. Using default values." -verboseMessage $true
 
-                # Default fallback times if parsing fails
-                $Sunrise = Get-Date -Hour 7 -Minute 0 -Second 0
-                $Sunset = Get-Date -Hour 19 -Minute 0 -Second 0
-                $TomorrowSunrise = $Sunrise.AddDays(1)
-            }
+				# Default fallback times if parsing fails
+				$Sunrise = Get-Date -Hour 7 -Minute 0 -Second 0
+				$Sunset = Get-Date -Hour 19 -Minute 0 -Second 0
+				$TomorrowSunrise = $Sunrise.AddDays(1)
+			}
 
-            # In fixed hours mode, we use differently named tasks
-            $SunriseTaskName = "Auto Theme fixed sunrise"
-            $SunsetTaskName = "Auto Theme fixed sunset"
+			# In fixed hours mode, we use differently named tasks
+			$SunriseTaskName = "Auto Theme fixed sunrise"
+			$SunsetTaskName = "Auto Theme fixed sunset"
 
-            # Clean up dynamic tasks if they exist
-            if (Test-IfTaskExists "Auto Theme sunrise") {
+			# Clean up dynamic tasks if they exist
+			if (Test-IfTaskExists "Auto Theme sunrise") {
 
-                Unregister-ScheduledTask -TaskName "Auto Theme sunrise" -Confirm:$false
-                Write-Log "Removed dynamic sunrise task as we're using fixed hours" -verboseMessage $true
-            }
-            if (Test-IfTaskExists "Auto Theme sunset") {
+				Unregister-ScheduledTask -TaskName "Auto Theme sunrise" -Confirm:$false
+				Write-Log "Removed dynamic sunrise task as we're using fixed hours" -verboseMessage $true
+			}
+			if (Test-IfTaskExists "Auto Theme sunset") {
 
-                Unregister-ScheduledTask -TaskName "Auto Theme sunset" -Confirm:$false
-                Write-Log "Removed dynamic sunset task as we're using fixed hours" -verboseMessage $true
-            }
+				Unregister-ScheduledTask -TaskName "Auto Theme sunset" -Confirm:$false
+				Write-Log "Removed dynamic sunset task as we're using fixed hours" -verboseMessage $true
+			}
 
-            # Check if fixed tasks already exist - if so, we don't need to recreate them
-            $sunriseTaskExists = Test-IfTaskExists $SunriseTaskName
-            $sunsetTaskExists = Test-IfTaskExists $SunsetTaskName
+			# Check if fixed tasks already exist - if so, we don't need to recreate them
+			$sunriseTaskExists = Test-IfTaskExists $SunriseTaskName
+			$sunsetTaskExists = Test-IfTaskExists $SunsetTaskName
 
-            # Only create fixed tasks if they don't already exist
-            if (-not $sunriseTaskExists) {
+			# Only create fixed tasks if they don't already exist
+			if (-not $sunriseTaskExists) {
 
-                Register-Task -NextTriggerTime $Sunrise -Name $SunriseTaskName -Description "Triggers transition to light mode based on a fixed schedule. Managed by the main Auto Theme task."
-                Write-Log "Created fixed sunrise task for daily operation"
-            }
+				Register-Task -NextTriggerTime $Sunrise -Name $SunriseTaskName -Description "Triggers transition to light mode based on a fixed schedule. Managed by the main Auto Theme task."
+				Write-Log "Created fixed sunrise task for daily operation"
+			}
 
-            if (-not $sunsetTaskExists) {
+			if (-not $sunsetTaskExists) {
 
-                Register-Task -NextTriggerTime $Sunset -Name $SunsetTaskName -Description "Triggers transition to dark mode based on a fixed schedule. Managed by the main Auto Theme task."
-                Write-Log "Created fixed sunset task for daily operation"
-            }
+				Register-Task -NextTriggerTime $Sunset -Name $SunsetTaskName -Description "Triggers transition to dark mode based on a fixed schedule. Managed by the main Auto Theme task."
+				Write-Log "Created fixed sunset task for daily operation"
+			}
 
-        # Dynamic hours mode
-        } else {
+		# Dynamic hours mode
+		} else {
 
-            # Remove fixed tasks if they exist
-            if (Test-IfTaskExists "Auto Theme fixed sunrise") {
+			# Remove fixed tasks if they exist
+			if (Test-IfTaskExists "Auto Theme fixed sunrise") {
 
-                Unregister-ScheduledTask -TaskName "Auto Theme fixed sunrise" -Confirm:$false
-                Write-Log "Removed fixed sunrise task as we're using dynamic times" -verboseMessage $true
-            }
-            if (Test-IfTaskExists "Auto Theme fixed sunset") {
-                Unregister-ScheduledTask -TaskName "Auto Theme fixed sunset" -Confirm:$false
-                Write-Log "Removed fixed sunset task as we're using dynamic times" -verboseMessage $true
-            }
+				Unregister-ScheduledTask -TaskName "Auto Theme fixed sunrise" -Confirm:$false
+				Write-Log "Removed fixed sunrise task as we're using dynamic times" -verboseMessage $true
+			}
+			if (Test-IfTaskExists "Auto Theme fixed sunset") {
+				Unregister-ScheduledTask -TaskName "Auto Theme fixed sunset" -Confirm:$false
+				Write-Log "Removed fixed sunset task as we're using dynamic times" -verboseMessage $true
+			}
 
-            # Dynamic times mode
-            $location = Get-Geolocation
+			# Dynamic times mode
+			$location = Get-Geolocation
             $lat = $location.Latitude
             $lng = $location.Longitude
 
@@ -1394,210 +1394,210 @@ param (
                 $TomorrowSunrise = if ($tomorrowSolar.status -eq "Success") { $tomorrowSolar.sunrise } else { $Sunrise.AddDays(1) }
             }
 
-            # Apply offsets if defined and non-zero
-            if ($null -ne $sunriseOffset -and $sunriseOffset -ne 0) {
-                $Sunrise = $Sunrise.AddMinutes([int]$sunriseOffset)
-                $TomorrowSunrise = $TomorrowSunrise.AddMinutes([int]$sunriseOffset)
-                Write-Log "Adding sunrise offset of $sunriseOffset minutes." -verboseMessage $true
-            }
-
-            if ($null -ne $sunsetOffset -and $sunsetOffset -ne 0) {
-                $Sunset = $Sunset.AddMinutes([int]$sunsetOffset)
-                Write-Log "Adding sunset offset of $sunsetOffset minutes." -verboseMessage $true
-            }
-
-            Write-Log "Using dynamic hours: Sunrise at $Sunrise, Sunset at $Sunset, TomorrowSunrise at $TomorrowSunrise" -verboseMessage $true
-
-            # In dynamic mode, we use standard task names
-            $SunriseTaskName = "Auto Theme sunrise"
-            $SunsetTaskName = "Auto Theme sunset"
-        }
-
-        # Determine current theme/mode state based on configuration
-        if ($useThemeFiles) {
-
-            $CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
-
-        } else {
-
-            $RegPath = "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-            $NativeValue = (Get-ItemProperty -Path $RegPath -Name "AppsUseLightTheme").AppsUseLightTheme
-        }
-
-        # Determine if we need to change the theme based on current time
-		# It's daytime - light theme period
-        if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
-
-            $NextTriggerTime = $Sunset
-            $NextTaskName = $SunsetTaskName
-            $mode = "light"
-
-            # Check if mode is already correct
-			# if using theme files
-            if ($useThemeFiles) {
-
-				# is the theme already active? log, set wall, register task and exit
-                if ($CurrentTheme -match $themeLight) {
-
-					# theme already set
-                    Write-Log "$themeLight is already active. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
-
-                } else {
-
-	                Write-Log "Setting the theme $themeLight" -verboseMessage $true
-
-	                # Change the theme
-	                Set-ThemeFile -ThemePath $lightPath
-
-	                # line for log and notification
-	                $mainLine = "$themeLight activated. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
-
-		            Update-Apps -themeMode $mode
-		            Write-Log $mainLine
-
-		            # Send notification
-		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
-
-				}
-
-			# if not using theme files
-            } else {
-
-                if ($NativeValue -eq 1) {
-
-					# theme already set
-                    Write-Log "$mode mode is already active. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = & $workerPath -Path $wallLightPath -ThemeSwitch -InformationAction Continue
-
-	                # Start rotating wallpapers via task
-	                Set-WallpaperRotationTask -Mode $mode
-
-                } else {
-
-	                Write-Log "Applying $mode mode" -verboseMessage $true
-
-	                # Change the mode
-	                Set-ThemeMode -Mode $Mode
-
-	                # line for log and notification
-	                $mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = & $workerPath -Path $wallLightPath -ThemeSwitch -InformationAction Continue
-
-	                # Start rotating wallpapers via task
-	                Set-WallpaperRotationTask -Mode $mode
-
-		            Update-Apps -themeMode $mode
-		            Write-Log $mainLine
-
-		            # Send notification
-		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
-
-				}
-            }
-
-            # Register the task
-            if (-not $useFixedHours) {
-
-                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to dark mode based on daylight. Managed by the main Auto Theme task."
-            }
-
-        # if it's nighttime - dark theme period
-		} else {
-
-            $NextTriggerTime = if ($Now -ge $Sunset) { $TomorrowSunrise } else { $Sunrise }
-            $NextTaskName = $SunriseTaskName
-            $mode = "dark"
-
-            # Check if mode is already correct
-			# if using theme files
-            if ($useThemeFiles) {
-
-				# is the theme already active?
-                if ($CurrentTheme -match $themeDark) {
-
-                    # theme already set. we log, register task and quietly exit
-                    Write-Log "$themeDark is already active. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
-
-                } else {
-
-	                Write-Log "Setting the theme $themeDark" -verboseMessage $true
-
-	                # Change the theme
-	                Set-ThemeFile -ThemePath $darkPath
-
-	                # line for log and notification
-	                $mainLine = "$themeDark activated. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
-
-		            Update-Apps -themeMode $mode
-		            Write-Log $mainLine
-
-		            # Send notification
-		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
-
-                }
-
-
-			# if not using theme files
-            } else {
-
-                if ($NativeValue -eq 0) {
-
-					# theme already set. we log, register task and quietly exit
-                    Write-Log "$mode mode is already active. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = & $workerPath -Path $wallDarkPath -ThemeSwitch -InformationAction Continue
-
-	                # Start rotating wallpapers via task
-	                Set-WallpaperRotationTask -Mode $mode 
-
-                } else {
-
-	                Write-Log "Applying $mode mode" -verboseMessage $true
-
-	                # Change the mode
-	                Set-ThemeMode -Mode $Mode
-
-	                # line for log and notification
-	                $mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
-
-	                # Set the wallpaper, grab its name
-	                $selectedWall = & $workerPath -Path $wallDarkPath -ThemeSwitch -InformationAction Continue
-
-	                # Start rotating wallpapers via task
-	                Set-WallpaperRotationTask -Mode $mode   
-
-		            Update-Apps -themeMode $mode
-		            Write-Log $mainLine
-
-		            # Send notification
-		            Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
-				}       
+			# Apply offsets if defined and non-zero
+			if ($null -ne $sunriseOffset -and $sunriseOffset -ne 0) {
+				$Sunrise = $Sunrise.AddMinutes([int]$sunriseOffset)
+				$TomorrowSunrise = $TomorrowSunrise.AddMinutes([int]$sunriseOffset)
+				Write-Log "Adding sunrise offset of $sunriseOffset minutes." -verboseMessage $true
 			}
 
-            # Register the task
-            if (-not $useFixedHours) {
+			if ($null -ne $sunsetOffset -and $sunsetOffset -ne 0) {
+				$Sunset = $Sunset.AddMinutes([int]$sunsetOffset)
+				Write-Log "Adding sunset offset of $sunsetOffset minutes." -verboseMessage $true
+			}
 
-                Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to light mode based on daylight. Managed by the main Auto Theme task."
-            }
-        }
-    }
+			Write-Log "Using dynamic hours: Sunrise at $Sunrise, Sunset at $Sunset, TomorrowSunrise at $TomorrowSunrise" -verboseMessage $true
+
+			# In dynamic mode, we use standard task names
+			$SunriseTaskName = "Auto Theme sunrise"
+			$SunsetTaskName = "Auto Theme sunset"
+		}
+
+		# Determine current theme/mode state based on configuration
+		if ($useThemeFiles) {
+
+			$CurrentTheme = (Get-ItemProperty -Path "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes" -Name CurrentTheme).CurrentTheme
+
+		} else {
+
+			$RegPath = "Registry::HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+			$NativeValue = (Get-ItemProperty -Path $RegPath -Name "AppsUseLightTheme").AppsUseLightTheme
+		}
+
+		# Determine if we need to change the theme based on current time
+		# It's daytime - light theme period
+		if ($Now -ge $Sunrise -and $Now -lt $Sunset) {
+
+			$NextTriggerTime = $Sunset
+			$NextTaskName = $SunsetTaskName
+			$mode = "light"
+
+			# Check if mode is already correct
+			# if using theme files
+			if ($useThemeFiles) {
+
+				# is the theme already active? log, set wall, register task and exit
+				if ($CurrentTheme -match $themeLight) {
+
+					# theme already set
+					Write-Log "$themeLight is already active. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
+
+				} else {
+
+					Write-Log "Setting the theme $themeLight" -verboseMessage $true
+
+					# Change the theme
+					Set-ThemeFile -ThemePath $lightPath
+
+					# line for log and notification
+					$mainLine = "$themeLight activated. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = Get-WallpaperName -wallpaperDirectory $wallLightPath -themeFilePath $lightPath
+
+					Update-Apps -themeMode $mode
+					Write-Log $mainLine
+
+					# Send notification
+					Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
+				}
+
+			# if not using theme files
+			} else {
+
+				if ($NativeValue -eq 1) {
+
+					# theme already set
+					Write-Log "$mode mode is already active. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = & $workerPath -Path $wallLightPath -ThemeSwitch -InformationAction Continue
+
+					# Start rotating wallpapers via task
+					Set-WallpaperRotationTask -Mode $mode
+
+				} else {
+
+					Write-Log "Applying $mode mode" -verboseMessage $true
+
+					# Change the mode
+					Set-ThemeMode -Mode $Mode
+
+					# line for log and notification
+					$mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = & $workerPath -Path $wallLightPath -ThemeSwitch -InformationAction Continue
+
+					# Start rotating wallpapers via task
+					Set-WallpaperRotationTask -Mode $mode
+
+					Update-Apps -themeMode $mode
+					Write-Log $mainLine
+
+					# Send notification
+					Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
+				}
+			}
+
+			# Register the task
+			if (-not $useFixedHours) {
+
+				Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to dark mode based on daylight. Managed by the main Auto Theme task."
+			}
+
+		# if it's nighttime - dark theme period
+		} else {
+
+			$NextTriggerTime = if ($Now -ge $Sunset) { $TomorrowSunrise } else { $Sunrise }
+			$NextTaskName = $SunriseTaskName
+			$mode = "dark"
+
+			# Check if mode is already correct
+			# if using theme files
+			if ($useThemeFiles) {
+
+				# is the theme already active?
+				if ($CurrentTheme -match $themeDark) {
+
+					# theme already set. we log, register task and quietly exit
+					Write-Log "$themeDark is already active. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
+
+				} else {
+
+					Write-Log "Setting the theme $themeDark" -verboseMessage $true
+
+					# Change the theme
+					Set-ThemeFile -ThemePath $darkPath
+
+					# line for log and notification
+					$mainLine = "$themeDark activated. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = Get-WallpaperName -wallpaperDirectory $wallDarkPath -themeFilePath $darkPath
+
+					Update-Apps -themeMode $mode
+					Write-Log $mainLine
+
+					# Send notification
+					Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+
+				}
+
+
+			# if not using theme files
+			} else {
+
+				if ($NativeValue -eq 0) {
+
+					# theme already set. we log, register task and quietly exit
+					Write-Log "$mode mode is already active. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = & $workerPath -Path $wallDarkPath -ThemeSwitch -InformationAction Continue
+
+					# Start rotating wallpapers via task
+					Set-WallpaperRotationTask -Mode $mode
+
+				} else {
+
+					Write-Log "Applying $mode mode" -verboseMessage $true
+
+					# Change the mode
+					Set-ThemeMode -Mode $Mode
+
+					# line for log and notification
+					$mainLine = "Activated $mode mode. Next trigger at: $NextTriggerTime"
+
+					# Set the wallpaper, grab its name
+					$selectedWall = & $workerPath -Path $wallDarkPath -ThemeSwitch -InformationAction Continue
+
+					# Start rotating wallpapers via task
+					Set-WallpaperRotationTask -Mode $mode
+
+					Update-Apps -themeMode $mode
+					Write-Log $mainLine
+
+					# Send notification
+					Send-ThemeNotification -MainLine $mainLine # -SelectedWallpaper $selectedWall
+				}
+			}
+
+			# Register the task
+			if (-not $useFixedHours) {
+
+				Register-Task -NextTriggerTime $NextTriggerTime -Name $NextTaskName -Description "Triggers transition to light mode based on daylight. Managed by the main Auto Theme task."
+			}
+		}
+	}
 
 # ============= RUNTIME ==============
 
