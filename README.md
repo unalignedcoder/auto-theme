@@ -81,26 +81,22 @@ Workarounds have been added for a number of apps which do not toggle theme grace
 
 ### v1.0.48 (2026-08-17)
 - Added the ability to change the **Lock Screen picture** along with the Desktop background
-- The setup script now warns when the feature is enabled under PowerShell 7, or when Windows Spotlight is left on
-- Fixed `$randomizeWallpaper = $false`, which used to freeze the slideshow on a single picture. When not randomized, now Light and Dark walls each keep their own place in the sequence, so switching mode resumes that folder where it left off rather than restarting it
-- The script now keeps some specific variables either in Registry or an .ini file (not compatible with rainmeter). See `at-config.ps1` for more info
+- The setup script now warns when running under PowerShell 7, or when Windows Spotlight is left on
+- Fixed `$randomizeWallpaper = $false`, which froze the slideshow altogether. Furthermore, Light and Dark walls now each keep their own place in the sequence, so switching mode resumes to the wallpaper file where it left off rather than restarting the slideshow
+- The script now keeps some specific variables either in Registry or an `.ini` file (not compatible with rainmeter). See `at-config.ps1` for more info
 - The "Wallpaper name" registry entry has been moved to a different registry key. Make sure you update your rainmeter skin accordingly
 - Extra apps are no longer restarted and no notification is sent when nothing has actually changed
 - The setup script has been improved to include an `-Uninstall` switch, which cleans all leftovers
 - Minor fixes and code polishing
 
-
-
 ### v1.0.46 (2026-01-16)
 - Fixed a parsing error in the Setup script
-
-
 
 ### v1.0.45 (2026-01-13)
 MAJOR UPDATE:
 - Added parameters to control script functions
 - Added the ability to move the slideshow to the next wallpaper
-- Added a native OFFLINE sunrise/sunset calculation system
+- Added a **native OFFLINE sunrise/sunset calculation system**
 - Added a Desktop CONTEXT MENU to control the slideshow or theme
 - Fixed a problem where wallpapers would not change if a task was created without the need to change theme
 - Fixed geolocation (again)
@@ -121,7 +117,7 @@ MAJOR UPDATE:
 
 ### v1.0.40
 MAJOR UPDATE:
-- Added a native system to load Dark or Light modes and randomize wallpapers. 
+- Added a **native system** to load Dark or Light modes and randomize wallpapers. 
 - Renamed the script `at.ps1` for consistency with my other "short-named" projects.
 - Changed the names of the generated tasks, make sure you delete the old ones in Task Scheduler.
 - Added a "wrapper" script (`AutoTheme.ps1`) for compatibility with older tasks and existing shortcuts.
