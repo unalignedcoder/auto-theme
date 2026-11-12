@@ -19,7 +19,7 @@ If using `.theme` files and the standard Windows slideshow, displaying wallpaper
 
 This script is designed to run in the background as a scheduled task, ensuring that the system theme is updated without user intervention.
 
-It operates <ins>almost entirely offline</ins>. It only connects to the internet to verify Location, in the case this is not retrivable from the system or is not provided by the user in the config file. 
+It operates <ins>almost entirely offline</ins>. It only connects to the internet to verify Location, in the case this is not retrievable from the system or is not provided by the user in the config file. 
 
 Sunrise and sunset calculations are done natively (optionally the user can request to do this via free api services such as sunrisesunset.io, but it is mostly unnecessary.) 
 
